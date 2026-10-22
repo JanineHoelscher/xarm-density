@@ -1,0 +1,51 @@
+{
+  "config": {
+    "index": 2,
+    "name": "Obstacle-free CDF-QP",
+    "purpose": "Check that the CDF-QP tracks the OSCBF nominal command without obstacles.",
+    "filter_mode": "cdf",
+    "safety_mode": "none",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.4,
+      0.35,
+      0.45
+    ],
+    "obstacle_centers": [],
+    "obstacle_radii": [],
+    "dt": 0.004166666666666667,
+    "steps": 1200,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.16,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20
+  },
+  "metrics": {
+    "steps": 455,
+    "simulated_time_s": 1.8958333333333333,
+    "target_reached": true,
+    "final_target_error_m": 0.03497245425247386,
+    "minimum_modeled_clearance_m": null,
+    "minimum_link_sphere_clearance_m": null,
+    "minimum_pybullet_mesh_clearance_m": null,
+    "pybullet_contact_steps": 0,
+    "minimum_cdf_residual": 0.010000028525211044,
+    "all_qps_feasible": true,
+    "maximum_joint_speed_rad_s": 0.6860693570075146,
+    "maximum_jax_bullet_fk_error_m": 5.272051141713389e-08,
+    "mean_qp_time_ms": 11.501880982381568,
+    "maximum_qp_time_ms": 13.30216697533615,
+    "mean_solver_time_ms": 7.571523512040705
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "config": {
+    "index": 6,
+    "name": "Whole-arm density",
+    "purpose": "Use the validation-5 scene while enforcing density safety for every link sphere.",
+    "filter_mode": "cdf",
+    "safety_mode": "whole_body",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.4,
+      0.35,
+      0.45
+    ],
+    "obstacle_centers": [
+      [
+        0.25,
+        0.15,
+        0.4
+      ]
+    ],
+    "obstacle_radii": [
+      0.085
+    ],
+    "dt": 0.004166666666666667,
+    "steps": 1200,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.16,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20
+  },
+  "metrics": {
+    "steps": 697,
+    "simulated_time_s": 2.904166666666667,
+    "target_reached": true,
+    "final_target_error_m": 0.0349654474428323,
+    "minimum_modeled_clearance_m": 0.0341805996739102,
+    "minimum_link_sphere_clearance_m": 0.0341805996739102,
+    "minimum_pybullet_mesh_clearance_m": 0.050432385547675526,
+    "pybullet_contact_steps": 0,
+    "minimum_cdf_residual": 0.010000000001397563,
+    "all_qps_feasible": true,
+    "maximum_joint_speed_rad_s": 0.6999999999458825,
+    "maximum_jax_bullet_fk_error_m": 6.176615371382485e-08,
+    "mean_qp_time_ms": 11.400786347189849,
+    "maximum_qp_time_ms": 29.71160301240161,
+    "mean_solver_time_ms": 7.524504930616412
+  }
+}

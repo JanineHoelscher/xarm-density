@@ -1,0 +1,792 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\title{Simple Summary of Operational Space Control Barrier Functions}
+\author{Notes for xArm / UF850 Density-Based Planning}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{What Problem Is The Paper Solving?}
+
+The paper studies safe real-time control of robot manipulators. The motivating
+problem is simple:
+
+\begin{quote}
+The end effector may have a desired task, but the whole robot body must remain
+safe while executing that task.
+\end{quote}
+
+This is directly relevant to our UF850 work. A density controller can generate
+a nice end-effector command from point A to point B, but if we simply map that
+command through inverse kinematics, the arm links may collide with cylinders,
+cuboids, the table, or other obstacles.
+
+The paper's main idea is to combine:
+
+\begin{itemize}[leftmargin=*]
+    \item operational-space control, which expresses the task in end-effector
+    coordinates;
+    \item control barrier functions, which enforce safety constraints;
+    \item a task-consistent quadratic program, which changes the command only
+    as much as necessary while preserving the task hierarchy.
+\end{itemize}
+
+\section{Main Contribution In Simple Terms}
+
+The main contribution is an \textbf{Operational Space Control Barrier Function}
+framework, abbreviated OSCBF.
+
+Instead of applying a safety filter only in joint space, the paper designs the
+filter so that it understands the task hierarchy:
+
+\[
+\text{primary task: end-effector motion}
+\]
+
+\[
+\text{secondary task: joint posture / null-space behavior}
+\]
+
+\[
+\text{safety: collision avoidance, joint limits, singularity avoidance, workspace limits}
+\]
+
+The controller solves a QP that tries to preserve the operational-space task
+while enforcing many safety constraints at once. This is what the authors call
+\emph{task consistency}.
+
+\section{Basic CBF Formulation}
+
+Consider a control-affine system
+
+\[
+\dot{z} = f(z) + g(z)u,
+\]
+
+where:
+
+\begin{itemize}[leftmargin=*]
+    \item $z$ is the state,
+    \item $u$ is the control input,
+    \item $f$ is the natural dynamics,
+    \item $g$ describes how the input affects the system.
+\end{itemize}
+
+A safety condition is encoded by a scalar function $h(z)$:
+
+\[
+\mathcal{C} = \{z : h(z) \ge 0\}.
+\]
+
+The set $\mathcal{C}$ is the safe set. If $h(z) < 0$, the system is unsafe.
+
+The CBF condition is:
+
+\[
+\dot{h}(z,u) \ge -\alpha(h(z)),
+\]
+
+where $\alpha(\cdot)$ is usually a simple increasing function such as
+
+\[
+\alpha(h) = \gamma h, \qquad \gamma > 0.
+\]
+
+For the control-affine system,
+
+\[
+\dot{h}(z,u)
+= \frac{\partial h}{\partial z}\dot{z}
+= L_f h(z) + L_g h(z)u.
+\]
+
+So the CBF constraint becomes
+
+\[
+L_f h(z) + L_g h(z)u \ge -\alpha(h(z)).
+\]
+
+This is useful because it is usually linear in $u$. Therefore it can be added
+as a constraint in a quadratic program.
+
+\section{Safety Filter QP}
+
+A standard CBF safety filter solves:
+
+\[
+\begin{aligned}
+u^\star
+= \arg\min_u \quad & \|u - u_{\mathrm{nom}}\|_2^2 \\
+\text{s.t.} \quad
+& L_f h(z) + L_g h(z)u \ge -\alpha(h(z)).
+\end{aligned}
+\]
+
+Here $u_{\mathrm{nom}}$ is the desired, possibly unsafe, control input. The QP
+returns $u^\star$, the closest safe input.
+
+In words:
+
+\begin{quote}
+Do what the nominal controller wants, unless doing so would violate safety.
+\end{quote}
+
+\section{Velocity-Controlled Manipulator Setup}
+
+For our first UF850 implementation, the velocity-controlled version is the most
+important.
+
+Let:
+
+\[
+z = q,
+\qquad
+u = \dot{q}.
+\]
+
+The reduced-order dynamics are:
+
+\[
+\dot{q} = u.
+\]
+
+The end-effector velocity is:
+
+\[
+\nu = J(q)\dot{q},
+\]
+
+where $J(q)$ is the manipulator Jacobian and $\nu$ is the operational-space
+twist. For position-only control, we can use the translational Jacobian:
+
+\[
+\dot{x} = J_v(q)\dot{q}.
+\]
+
+\section{Nominal Operational-Space Command}
+
+The paper computes a nominal end-effector twist using proportional feedback:
+
+\[
+\nu_{\mathrm{nom}}
+= \nu_{\mathrm{des}}
+- K_{p,o}
+\begin{bmatrix}
+x_p - x_{p,\mathrm{des}} \\
+\delta \phi
+\end{bmatrix}.
+\]
+
+Here:
+
+\begin{itemize}[leftmargin=*]
+    \item $x_p$ is the end-effector position,
+    \item $x_{p,\mathrm{des}}$ is the desired position,
+    \item $\delta \phi$ is orientation error,
+    \item $K_{p,o}$ is an operational-space gain.
+\end{itemize}
+
+For our density planner, we can replace this nominal command with:
+
+\[
+\dot{x}_{\mathrm{nom}}
+= u_{\mathrm{density}}(x, x_{\mathrm{goal}}, \text{obstacles}).
+\]
+
+That is: density feedback gives the desired end-effector velocity.
+
+\section{Mapping To Joint Velocity}
+
+A naive approach maps the end-effector command to joint velocity using a
+Jacobian pseudoinverse:
+
+\[
+\dot{q}_{\mathrm{nom}}
+= J^\#(q)\nu_{\mathrm{nom}}.
+\]
+
+If the robot is redundant, a null-space posture command can be added:
+
+\[
+\dot{q}_{\mathrm{nom}}
+= J^\#(q)\nu_{\mathrm{nom}}
++ N(q)\dot{q}_0,
+\]
+
+where:
+
+\[
+N(q) = I - J^\#(q)J(q).
+\]
+
+This command is still unsafe by itself. The OSCBF QP filters it.
+
+\section{Task-Consistent OSCBF Objective}
+
+A basic joint-space safety filter would minimize:
+
+\[
+\|\dot{q} - \dot{q}_{\mathrm{nom}}\|_2^2.
+\]
+
+The paper argues that this can be task-inconsistent. Why? Because the real task
+is often the end-effector motion, not matching a particular joint velocity.
+
+Instead, the OSCBF objective penalizes deviations in the task variables:
+
+\[
+\|W_o J(q)(\dot{q} - \dot{q}_{\mathrm{nom}})\|_2^2
++
+\|W_j N(q)(\dot{q} - \dot{q}_{\mathrm{nom}})\|_2^2.
+\]
+
+The first term says:
+
+\[
+\text{preserve the operational-space/end-effector command}.
+\]
+
+The second term says:
+
+\[
+\text{preserve the null-space posture behavior when possible}.
+\]
+
+This is the core ``nice'' part of the formulation. The safety filter does not
+blindly stay close to joint velocities. It stays close to the behavior that
+matters for the task.
+
+\section{Kinematic OSCBF QP}
+
+For a velocity-controlled robot, the OSCBF QP can be written as:
+
+\[
+\begin{aligned}
+\dot{q}^{\star}
+= \arg\min_{\dot{q}} \quad
+& \|W_o J(q)(\dot{q} - \dot{q}_{\mathrm{nom}})\|_2^2
+ + \|W_j N(q)(\dot{q} - \dot{q}_{\mathrm{nom}})\|_2^2 \\
+\text{s.t.} \quad
+& \nabla h_k(q)^\top \dot{q}
+  \ge -\alpha_k(h_k(q)), \qquad k = 1,\dots,m, \\
+& \dot{q}_{\min} \le \dot{q} \le \dot{q}_{\max}.
+\end{aligned}
+\]
+
+Each $h_k$ is one safety constraint. There can be many of them.
+
+\section{Collision Avoidance Barrier}
+
+The paper uses sphere decompositions for whole-body collision avoidance. The
+robot is approximated by spheres attached to links. Obstacles are also
+represented as spheres, or decomposed into sphere-like primitives.
+
+For robot sphere $i$ and obstacle sphere $j$:
+
+\[
+h_{ij}(q)
+= \|p_i(q) - p_{j,\mathrm{obs}}\|_2
+- r_i
+- r_{j,\mathrm{obs}}.
+\]
+
+With a safety margin $d_{\mathrm{safe}}$, use:
+
+\[
+h_{ij}(q)
+= \|p_i(q) - p_{j,\mathrm{obs}}\|_2
+- r_i
+- r_{j,\mathrm{obs}}
+- d_{\mathrm{safe}}.
+\]
+
+Safe means:
+
+\[
+h_{ij}(q) \ge 0.
+\]
+
+The CBF constraint is:
+
+\[
+\nabla h_{ij}(q)^\top \dot{q}
+\ge
+-\gamma h_{ij}(q).
+\]
+
+Intuitively:
+
+\begin{itemize}[leftmargin=*]
+    \item if the link is far away, the constraint is loose;
+    \item if the link is near the obstacle, the constraint becomes active;
+    \item at the safety boundary, the robot may not move further into the
+    obstacle.
+\end{itemize}
+
+\section{How OSCBF Avoids Link Collisions From Task-Space Commands}
+
+This is the most important point for our project.
+
+A common but unsafe pipeline is:
+
+\[
+\text{plan a safe end-effector path}
+\quad \rightarrow \quad
+\text{run inverse kinematics}
+\quad \rightarrow \quad
+\text{execute joint path}.
+\]
+
+The failure is that ``safe end-effector path'' only means the tool point is
+safe. It says nothing about the rest of the robot. An IK solution may place the
+elbow, wrist, or forearm inside an obstacle even when the end effector is far
+from it.
+
+OSCBF avoids this by putting the end-effector task and the whole-body safety
+constraints into the same optimization problem.
+
+\subsection{Task-Space Motion Is The Objective}
+
+Suppose the task-space planner or density controller gives a desired
+end-effector velocity:
+
+\[
+\dot{x}_{\mathrm{nom}}.
+\]
+
+The QP tries to choose a joint velocity $\dot{q}$ that realizes this motion:
+
+\[
+J_v(q)\dot{q} \approx \dot{x}_{\mathrm{nom}}.
+\]
+
+So the objective contains:
+
+\[
+\|J_v(q)\dot{q} - \dot{x}_{\mathrm{nom}}\|_2^2.
+\]
+
+This says:
+
+\begin{quote}
+Move the end effector the way the task-space controller wants.
+\end{quote}
+
+\subsection{Link Safety Is A Constraint}
+
+For every robot body sphere $i$ and obstacle sphere $j$, define:
+
+\[
+h_{ij}(q)
+= \|p_i(q) - p_{j,\mathrm{obs}}\|_2
+- r_i
+- r_{j,\mathrm{obs}}
+- d_{\mathrm{safe}}.
+\]
+
+This is not just an end-effector distance. The point $p_i(q)$ can be on any
+link:
+
+\[
+p_i(q) \in
+\{\text{base link, shoulder link, elbow link, forearm link, wrist link, tool}\}.
+\]
+
+For each such pair, OSCBF adds:
+
+\[
+\nabla h_{ij}(q)^\top \dot{q}
+\ge
+-\gamma h_{ij}(q).
+\]
+
+This says:
+
+\begin{quote}
+Do not choose a joint velocity that makes any robot link move into an obstacle
+too quickly.
+\end{quote}
+
+At the boundary of safety, where $h_{ij}(q)=0$, the condition becomes:
+
+\[
+\nabla h_{ij}(q)^\top \dot{q} \ge 0.
+\]
+
+So the robot cannot move that link any deeper toward the obstacle.
+
+\subsection{The Combined QP}
+
+The combined velocity-control problem is:
+
+\[
+\begin{aligned}
+\dot{q}^{\star}
+= \arg\min_{\dot{q}} \quad
+& \|J_v(q)\dot{q} - \dot{x}_{\mathrm{nom}}\|_2^2
+ + \lambda \|\dot{q} - \dot{q}_{\mathrm{posture}}\|_2^2 \\
+\text{s.t.} \quad
+& \nabla h_{ij}(q)^\top \dot{q}
+  \ge -\gamma h_{ij}(q),
+  \qquad \forall\; \text{robot body } i,\; \text{obstacle } j,\\
+& \dot{q}_{\min} \le \dot{q} \le \dot{q}_{\max}.
+\end{aligned}
+\]
+
+The objective is task-space:
+
+\[
+\text{track the desired end-effector motion}.
+\]
+
+The constraints are whole-body:
+
+\[
+\text{keep every modeled link away from obstacles}.
+\]
+
+This is the key separation. Task space gives the desired behavior. The CBF
+constraints decide which joint velocities are allowed.
+
+\subsection{Why This Fixes The IK Failure Mode}
+
+In the unsafe IK pipeline, collision checking happens after the task-space
+motion has already been converted into a joint path. If the IK solution is bad,
+we discover the problem late.
+
+In OSCBF, the optimizer never treats IK as a separate final step. It directly
+chooses $\dot{q}$ while enforcing link-safety constraints.
+
+So instead of:
+
+\[
+\text{safe tool path} \rightarrow \text{possibly unsafe IK},
+\]
+
+we solve:
+
+\[
+\text{best joint velocity for the tool task}
+\quad
+\text{subject to all link distances staying safe}.
+\]
+
+If the nominal end-effector command would require the elbow to move into a
+cylinder, the link-obstacle CBF for the elbow becomes active and the QP finds
+another feasible joint velocity. If no safe joint velocity exists, the QP
+slows, stops, or uses slack depending on the implementation.
+
+\section{Joint Limit Barrier}
+
+For each joint:
+
+\[
+h_{\min,i}(q) = q_i - q_{\min,i},
+\]
+
+\[
+h_{\max,i}(q) = q_{\max,i} - q_i.
+\]
+
+The CBF constraints are:
+
+\[
+\dot{q}_i \ge -\gamma(q_i - q_{\min,i}),
+\]
+
+\[
+-\dot{q}_i \ge -\gamma(q_{\max,i} - q_i).
+\]
+
+These slow the joint as it approaches its limits.
+
+\section{Singularity Avoidance Barrier}
+
+The paper also considers singularity avoidance using manipulability:
+
+\[
+h(q) = \mu(q) - \epsilon.
+\]
+
+The manipulability $\mu(q)$ can be written using singular values of the
+Jacobian:
+
+\[
+\mu(q) = \prod_i \sigma_i(J(q)).
+\]
+
+Safe means:
+
+\[
+\mu(q) \ge \epsilon.
+\]
+
+This keeps the robot away from configurations where the Jacobian becomes close
+to singular.
+
+\section{Why This Is Nice}
+
+The formulation is attractive for manipulation because:
+
+\begin{itemize}[leftmargin=*]
+    \item It handles whole-body safety, not only end-effector safety.
+    \item It can enforce many constraints at the same time.
+    \item The QP is local and fast compared with nonlinear MPC.
+    \item It is less heuristic than artificial potential fields.
+    \item The safety filter is minimally invasive.
+    \item The objective is task-consistent, so the robot preserves the
+    end-effector task instead of merely staying close to an arbitrary joint
+    command.
+\end{itemize}
+
+\section{Velocity, Torque, And Position Control}
+
+The OSCBF GitHub repository is organized around two main controller
+formulations:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{velocity control}: the safety filter outputs joint velocities
+    $\dot{q}$;
+    \item \textbf{torque control}: the safety filter outputs joint torques
+    $\tau$.
+\end{itemize}
+
+The repository README says OSCBF can enforce safety on both torque-controlled
+and velocity-controlled robots, and can be used either as a full controller or
+as a safety filter on top of an existing controller. The code reflects this:
+there are separate OSCBF configuration classes for velocity control and torque
+control.
+
+\subsection{Velocity-Controlled OSCBF}
+
+In velocity control, the state and input are:
+
+\[
+z = q,
+\qquad
+u = \dot{q}.
+\]
+
+The model is:
+
+\[
+\dot{q} = u.
+\]
+
+For a safety function $h(q)$, the derivative is:
+
+\[
+\dot{h}(q, \dot{q})
+= \nabla h(q)^\top \dot{q}.
+\]
+
+The CBF constraint is:
+
+\[
+\nabla h(q)^\top \dot{q}
+\ge
+-\gamma h(q).
+\]
+
+This is the cleanest version for our first implementation because the QP
+directly chooses the safe joint velocity.
+
+\subsection{Torque-Controlled OSCBF}
+
+In torque control, the state and input are:
+
+\[
+z =
+\begin{bmatrix}
+q \\
+\dot{q}
+\end{bmatrix},
+\qquad
+u = \tau.
+\]
+
+The dynamics are second order:
+
+\[
+M(q)\ddot{q} + c(q,\dot{q}) + g(q) = \tau.
+\]
+
+Equivalently:
+
+\[
+\begin{bmatrix}
+\dot{q} \\
+\ddot{q}
+\end{bmatrix}
+=
+f(q,\dot{q}) + g(q)\tau.
+\]
+
+For collision avoidance, joint limits, and workspace limits, the safety
+function often depends on position:
+
+\[
+h = h(q).
+\]
+
+The torque $\tau$ does not appear in $\dot{h}$ immediately. It appears after
+differentiating again:
+
+\[
+\ddot{h}(q,\dot{q},\tau)
+= L_f^2 h(z) + L_g L_f h(z)\tau.
+\]
+
+So torque control usually needs a high-order CBF:
+
+\[
+L_f h_2(z) + L_g h_2(z)\tau
+\ge
+-\alpha_2(h_2(z)),
+\]
+
+where:
+
+\[
+h_2(z) = L_f h(z) + \alpha_1(h(z)).
+\]
+
+This is more physically accurate, especially for fast motions, because it
+accounts for inertia, Coriolis/centrifugal effects, gravity, and torque limits.
+But it is also more complex.
+
+\subsection{Where Position Control Fits}
+
+Position control is different. A position-controlled robot accepts a desired
+joint position:
+
+\[
+q_{\mathrm{cmd}}.
+\]
+
+It does not directly accept the CBF decision variable $\dot{q}$ or $\tau$.
+Instead, an internal controller tries to move the robot toward
+$q_{\mathrm{cmd}}$.
+
+For example, the low-level behavior may look roughly like:
+
+\[
+\dot{q} \approx K(q_{\mathrm{cmd}} - q).
+\]
+
+This means a pure CBF constraint in terms of $\dot{q}$ is not exactly the same
+as commanding positions. However, we can still use the velocity OSCBF as an
+outer-loop planner:
+
+\[
+\dot{q}^{\star}
+= \text{OSCBF}(q, \dot{x}_{\mathrm{nom}}, \text{safety constraints}),
+\]
+
+then convert it to a small position command:
+
+\[
+q_{\mathrm{cmd}}
+= q + \Delta t\,\dot{q}^{\star}.
+\]
+
+This is the practical bridge to MoveIt/Gazebo trajectory execution. The CBF
+thinks in velocities, while the simulator/controller receives short position
+waypoints.
+
+\subsection{Recommended Choice For UF850}
+
+For our first UF850 simulation:
+
+\begin{itemize}[leftmargin=*]
+    \item use the \textbf{velocity-controlled OSCBF formulation};
+    \item compute $\dot{q}^{\star}$ from the QP;
+    \item integrate it into small position waypoints;
+    \item send those waypoints through the existing position/trajectory
+    controller.
+\end{itemize}
+
+This gives us the simple CBF math:
+
+\[
+\nabla h(q)^\top \dot{q}
+\ge
+-\gamma h(q),
+\]
+
+while remaining compatible with MoveIt-style execution:
+
+\[
+q_{\mathrm{next}} = q + \Delta t\,\dot{q}^{\star}.
+\]
+
+Later, if we need faster and more dynamically faithful behavior, we can move to
+the torque-controlled OSCBF formulation.
+
+\section{How We Should Use It For UF850}
+
+For our first density-based UF850 planner:
+
+\[
+\dot{x}_{\mathrm{nom}}
+= u_{\mathrm{density}}(x_{\mathrm{tcp}}, x_{\mathrm{goal}}, \text{workspace obstacles}).
+\]
+
+Then solve:
+
+\[
+\begin{aligned}
+\dot{q}^{\star}
+= \arg\min_{\dot{q}} \quad
+& \|J_v(q)\dot{q} - \dot{x}_{\mathrm{nom}}\|_2^2
+ + \lambda \|\dot{q} - \dot{q}_{\mathrm{posture}}\|_2^2 \\
+\text{s.t.} \quad
+& \nabla h_{\mathrm{collision},k}(q)^\top \dot{q}
+  \ge -\gamma h_{\mathrm{collision},k}(q), \\
+& \nabla h_{\mathrm{joint},k}(q)^\top \dot{q}
+  \ge -\gamma h_{\mathrm{joint},k}(q), \\
+& \dot{q}_{\min} \le \dot{q} \le \dot{q}_{\max}.
+\end{aligned}
+\]
+
+Then integrate:
+
+\[
+q_{t+1} = q_t + \Delta t \, \dot{q}^{\star}.
+\]
+
+This replaces the risky pipeline:
+
+\[
+\text{safe end-effector path} \rightarrow \text{IK} \rightarrow
+\text{possible link collision}
+\]
+
+with:
+
+\[
+\text{desired end-effector velocity} \rightarrow
+\text{whole-arm safe QP} \rightarrow
+\text{safe joint velocity}.
+\]
+
+\section{Takeaway}
+
+The paper's key message is:
+
+\begin{quote}
+When a robot's task is defined in operational space, its safety filter should
+also preserve operational-space task behavior while enforcing whole-body safety.
+\end{quote}
+
+For our project, that means density feedback should generate the desired tool
+motion, and OSCBF-style constraints should make that motion safe for all UF850
+links and joints.
+
+\end{document}

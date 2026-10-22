@@ -1,0 +1,65 @@
+{
+  "config": {
+    "index": 4,
+    "name": "Multiple-obstacle whole-arm CDF-QP",
+    "purpose": "Test the product density window with deterministic spherical obstacles.",
+    "filter_mode": "cdf",
+    "safety_mode": "whole_body",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.4,
+      0.35,
+      0.45
+    ],
+    "obstacle_centers": [
+      [
+        0.5,
+        0.18,
+        0.36
+      ],
+      [
+        0.45,
+        0.35,
+        0.3
+      ]
+    ],
+    "obstacle_radii": [
+      0.055,
+      0.04
+    ],
+    "dt": 0.004166666666666667,
+    "steps": 1200,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.16,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20
+  },
+  "metrics": {
+    "steps": 613,
+    "simulated_time_s": 2.5541666666666667,
+    "target_reached": true,
+    "final_target_error_m": 0.03493256920081944,
+    "minimum_modeled_clearance_m": 0.034831362451792074,
+    "minimum_link_sphere_clearance_m": 0.034831362451792074,
+    "minimum_pybullet_mesh_clearance_m": 0.011151410629092022,
+    "pybullet_contact_steps": 0,
+    "minimum_cdf_residual": 0.010000000000698273,
+    "all_qps_feasible": true,
+    "maximum_joint_speed_rad_s": 0.6999999999221674,
+    "maximum_jax_bullet_fk_error_m": 5.829852034273475e-08,
+    "mean_qp_time_ms": 13.71957762960685,
+    "maximum_qp_time_ms": 28.27091299695894,
+    "mean_solver_time_ms": 9.70330783160294
+  }
+}

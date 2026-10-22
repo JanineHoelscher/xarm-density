@@ -1,0 +1,59 @@
+{
+  "config": {
+    "index": 3,
+    "name": "Single-obstacle whole-arm CDF-QP",
+    "purpose": "Avoid one sphere on the nominal workspace path using all link spheres.",
+    "filter_mode": "cdf",
+    "safety_mode": "whole_body",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.4,
+      0.35,
+      0.45
+    ],
+    "obstacle_centers": [
+      [
+        0.5,
+        0.18,
+        0.36
+      ]
+    ],
+    "obstacle_radii": [
+      0.065
+    ],
+    "dt": 0.004166666666666667,
+    "steps": 1200,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.16,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20
+  },
+  "metrics": {
+    "steps": 614,
+    "simulated_time_s": 2.558333333333333,
+    "target_reached": true,
+    "final_target_error_m": 0.0349096768196977,
+    "minimum_modeled_clearance_m": 0.02695310443353191,
+    "minimum_link_sphere_clearance_m": 0.026953104433531938,
+    "minimum_pybullet_mesh_clearance_m": 0.0026077739999621763,
+    "pybullet_contact_steps": 0,
+    "minimum_cdf_residual": 0.010000000000105716,
+    "all_qps_feasible": true,
+    "maximum_joint_speed_rad_s": 0.699999999982385,
+    "maximum_jax_bullet_fk_error_m": 5.6978000819376755e-08,
+    "mean_qp_time_ms": 12.952907392343716,
+    "maximum_qp_time_ms": 19.05141497263685,
+    "mean_solver_time_ms": 9.64303386336229
+  }
+}
