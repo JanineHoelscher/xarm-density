@@ -63,39 +63,39 @@ python scripts/run_pybullet_cdf_validations.py
 
 The state is the six joint angles $q$, and the command is joint velocity:
 
-$$
+```math
 \dot q=u,\qquad q\in\mathbb R^6.
-$$
+```
 
 For robot sphere $a$ and obstacle $b$, define surface clearance and a smooth
 obstacle window:
 
-$$
+```math
 d_{ab}(q)=\|p_a(q)-o_b\|-r_a-R_b,\qquad
-\psi(q)=\prod_{a,b}S\!\left(\frac{d_{ab}(q)}{\delta}\right).
-$$
+\psi(q)=\prod_{a,b}S\left(\frac{d_{ab}(q)}{\delta}\right).
+```
 
 $S$ is zero at nonpositive clearance and one beyond the sensing width
 $\delta$. Thus every modeled link-obstacle pair contributes to the density:
 
-$$
+```math
 \rho(q)=\frac{\psi(q)}{(\|x_{\rm TCP}(q)-x_g\|^2+\epsilon)^\alpha}.
-$$
+```
 
 Parameterize the weighted flux $w=\rho u$ with quadratic basis functions,
 then choose its coefficients to stay close to a nominal joint command:
 
-$$
+```math
 \begin{aligned}
 \min_\theta\quad &
 \frac12\|u_\theta(q)-u_{\rm nom}\|^2
 +\frac{\lambda_u}{2}\|u_\theta(q)\|^2
 +\frac{\lambda_\theta}{2}\|\theta\|^2\\
 \text{subject to}\quad &
-\nabla_q\!\cdot w_\theta(q)\ge\eta,\\
+\nabla_q\cdot w_\theta(q)\ge\eta,\\
 &-u_{\max}\le u_\theta(q)\le u_{\max}.
 \end{aligned}
-$$
+```
 
 The nominal controller supplies progress along the reference and orientation
 tracking. The QP adjusts its joint command through one aggregate density
@@ -108,19 +108,19 @@ At the current $q$, the applied command and transport residual are linear in
 the coefficients: $u=B(q)\theta$ and $\nabla\cdot w=a(q)^T\theta$.
 The same problem becomes:
 
-$$
+```math
 \begin{aligned}
 \min_{\theta\in\mathbb R^{168}}\quad &
 \frac12\theta^TH\theta+g^T\theta\\
 \text{subject to}\quad &a^T\theta\ge\eta,\\
 &-u_{\max}\mathbf1\le B\theta\le u_{\max}\mathbf1,
 \end{aligned}
-$$
+```
 
-$$
+```math
 H=B^TB+\lambda_u B^TB+\lambda_\theta I,\qquad
 g=-B^Tu_{\rm nom}.
-$$
+```
 
 For validation 9, $\lambda_u=0.02$, $\lambda_\theta=0.0002$,
 $\eta=0.01$, and $u_{\max}=0.7$ rad/s. There are 28 quadratic basis terms
