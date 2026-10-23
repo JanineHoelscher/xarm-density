@@ -28,6 +28,6 @@ __pycache__/
 *.blg
 *.run.xml
 *.bcf
-/scripts/latex/build/
-/scripts/latex/density-xarm.pdf
-/scripts/latex/density-xarm-optimized.pdf
+/latex/build/
+/latex/density-xarm.pdf
+/latex/density-xarm-optimized.pdf

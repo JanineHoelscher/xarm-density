@@ -185,7 +185,7 @@ samples. No simulations or timings were collected by these plotting scripts.
 ```bash
 conda activate xarm
 cd /home/sriramk/xarm_ws
-python scripts/figures/generate_figures.py
+python latex/figures/generate_figures.py
 ```
 
 This runs the validation 9 plotter followed by the validation 10 plotter.

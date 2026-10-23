@@ -11,13 +11,13 @@ From the repository root:
 ```bash
 conda activate xarm
 python -m pip install -e '.[paper]'
-python scripts/figures/generate_figures.py --from-csv
+python latex/figures/generate_figures.py --from-csv
 ```
 
 To preserve the tracked exports while checking reproduction:
 
 ```bash
-python scripts/figures/generate_figures.py --output /tmp/xarm-paper-figures
+python latex/figures/generate_figures.py --output /tmp/xarm-paper-figures
 ```
 
 The wrapper validates CSV/JSON checksums, reconstructs temporary NPZ inputs,
@@ -52,7 +52,7 @@ Timing scopes are nested, not additive; they are not worst-case guarantees.
 ## Scope
 
 This reproduces plots/tables **from preserved measurements** and builds the
-paper with [the LaTeX sources](../latex/README.md). Historical baseline timing
+paper with [the LaTeX sources](../README.md). Historical baseline timing
 arrays remain available for audit but are not plotted as headline results.
 The wrapper does not smooth data or select only the fastest samples.
 

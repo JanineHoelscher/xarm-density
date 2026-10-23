@@ -178,7 +178,7 @@ establish worst-case real-time guarantees or robustness across different scenes.
 ```bash
 conda activate xarm
 cd /home/sriramk/xarm_ws
-python scripts/figures/generate_figures.py --from-csv
+python latex/figures/generate_figures.py --from-csv
 ```
 
 This validates checksums, restores temporary plotting inputs from these CSVs
@@ -189,14 +189,14 @@ ZIP files can have different binary hashes while holding identical arrays.
 To export a newer set of saved runs and regenerate everything:
 
 ```bash
-python scripts/figures/generate_figures.py
+python latex/figures/generate_figures.py
 ```
 
 To collect new timing measurements, rather than replot the saved ones:
 
 ```bash
 python scripts/pybullet_validation_10.py --rates 100 50 240 --samples 160 --repeats 3 --blas-threads 1 --device cpu
-python scripts/figures/generate_figures.py
+python latex/figures/generate_figures.py
 ```
 
 New measurements can vary with OS load, CPU clocks, and software versions.
@@ -219,7 +219,7 @@ definitions, calculation methods, and SHA-256 checksums. This complements the
 rounded summary-table CSVs above. The export checks exact numeric round-trip.
 
 ```bash
-python scripts/figures/generate_figures.py --from-csv
+python latex/figures/generate_figures.py --from-csv
 ```
 
 This rebuilds the figures using the raw CSVs and JSON metadata alone. For a new

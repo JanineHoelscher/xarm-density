@@ -10,7 +10,7 @@ the simulation/control flow, and the current ROS interface versus the future
 hardware integration steps.
 
 Paper sources, figures, and saved CSVs are tracked under
-[scripts/latex](scripts/latex/README.md) and [scripts/figures](scripts/figures/README.md)
+[latex/](latex/README.md) and [latex/figures/](latex/figures/README.md)
 for rebuilding the paper and replotting its recorded numerical results.
 
 ## Standalone setup: no ROS required
@@ -140,7 +140,7 @@ interfaces, and hardware validation are still needed before physical execution.
 
 Superseded ROS/Gazebo loaders, experiments, workspace builds, and historical
 copies are preserved under ignored `archive/`. Active paper sources, figure
-exports, plotting helpers, and recorded CSV inputs are tracked under `scripts/`.
+exports, plotting helpers, and recorded CSV inputs are tracked under `latex/`.
 The remaining archived files are
 not needed by this package and are not distributed in a fresh clone. Previously
 published versions remain in Git history. The research paper remains available

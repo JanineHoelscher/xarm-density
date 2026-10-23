@@ -19,10 +19,10 @@
 \usepackage[hidelinks]{hyperref}
 
 \tcbuselibrary{skins,breakable}
-\graphicspath{{../figures/}{figures/}{scripts/figures/}}
+\graphicspath{{figures/}{latex/figures/}}
 \DeclareGraphicsExtensions{.pdf,.png}
 
-% Search the sibling figures folder first; prefer PDF, with PNG fallback.
+% Prefer PDF figures from the paper's figures folder, with PNG fallback.
 \newcommand{\paperfigure}[2]{%
     \includegraphics[width=#2]{#1}%
 }

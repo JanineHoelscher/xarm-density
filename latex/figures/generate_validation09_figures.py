@@ -293,7 +293,7 @@ the orientation reference is the initial tool orientation.
 ```bash
 conda activate xarm
 cd /home/sriramk/xarm_ws
-python scripts/figures/generate_validation09_figures.py
+python latex/figures/generate_validation09_figures.py
 ```
 
 Optional `--input PATH` selects a validation 9 result directory, and `--output
@@ -324,7 +324,7 @@ captions and dash patterns preserve paired-curve identification in grayscale.
 % In the paper (paths assume the repository is available):
 \\begin{{figure}}[t]
   \\centering
-  \\includegraphics[width=\\columnwidth]{{scripts/figures/fig02_tracking_errors.pdf}}
+  \\includegraphics[width=\\columnwidth]{{latex/figures/fig02_tracking_errors.pdf}}
   \\caption{{TCP position and orientation tracking errors for the UF850
   whole-arm CDF-QP in validation 9.}}
   \\label{{fig:uf850-tracking}}

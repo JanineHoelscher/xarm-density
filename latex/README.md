@@ -1,9 +1,9 @@
 # Build the UF850 paper
 
 Tracked files include both LaTeX sources, the seven figure PDFs in
-`../figures/`, recorded CSV/JSON inputs in `../figures/data/`, and numerical
+`figures/`, recorded CSV/JSON inputs in `figures/data/`, and numerical
 plotting helpers. The original archive is not needed for these workflows.
-The published [root PDF](../../density-xarm.pdf) remains unchanged.
+The published [root PDF](../density-xarm.pdf) remains unchanged.
 
 ## Compile from a fresh clone
 
@@ -12,11 +12,11 @@ No conda/ROS installation is needed just to compile. This host provides system
 `latexmk` and `pdflatex` with IEEEtran. From the repository root:
 
 ```bash
-cd scripts/latex
+cd latex
 latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build density-xarm-optimized.tex
 ```
 
-Output: `scripts/latex/build/density-xarm-optimized.pdf`. Auxiliary files and
+Output: `latex/build/density-xarm-optimized.pdf`. Auxiliary files and
 compiled PDFs in this folder are gitignored. To build the earlier layout,
 replace the source filename with `density-xarm.tex`; only its figure lookup
 was changed during restoration. All paths are relative to the clone.
@@ -33,13 +33,13 @@ From the repository root:
 ```bash
 conda activate xarm
 python -m pip install -e '.[paper]'
-python scripts/figures/generate_figures.py --from-csv
+python latex/figures/generate_figures.py --from-csv
 ```
 
 This validates tracked CSV/JSON checksums, reconstructs temporary plotting
 inputs, and regenerates figures 1--4 and 6--7 and their tables. Figure 8 is
 the included recorded snapshot panel, not a new render. See
-[figure reproduction](../figures/README.md) for details.
+[figure reproduction](figures/README.md) for details.
 
 Replotting preserves recorded measurements; it does not rerun historical
 controllers or collect new timing measurements. New simulations use the
@@ -48,8 +48,8 @@ current standalone runner documented in the main README.
 ## Overleaf
 
 Use `density-xarm-optimized.tex` as the main document with pdfLaTeX. Include
-the seven figure PDFs in `figures/`, or retain the sibling `latex/` and
-`figures/` folders. Both layouts are supported. The bibliography is inline;
+the seven figure PDFs in `figures/`, alongside the main document, or retain
+the repository's `latex/` folder layout. The bibliography is inline;
 no separate `.bib` or custom class file is required. IEEEtran must be available
 in the chosen TeX installation.
 
