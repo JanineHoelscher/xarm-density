@@ -10,8 +10,11 @@ The default control rate is 100 Hz (10 ms).
 ```bash
 git clone https://github.com/sriram-2502/xarm-density.git
 cd xarm-density
-conda env create -f environment.yml
-conda activate xarm-density
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
 xarm-sim
 ```
 
@@ -72,8 +75,9 @@ home-directory paths are needed to launch the standalone simulation. See
 ## ROS 2 Jazzy and hardware direction
 
 The optional ROS package publishes simulated joints/TCP and accepts point
-goals, without MoveIt or Gazebo. Keep conda and ROS in **separate terminals**;
-do not mix apt-installed `rclpy` into conda. Jazzy's binary platform is Ubuntu
+goals, without MoveIt or Gazebo. Keep the Python virtual environment and ROS
+setup in **separate terminals**; the ROS bridge needs the apt-installed `rclpy`
+from the native ROS environment. Jazzy's binary platform is Ubuntu
 24.04. Follow [docs/ROS2_JAZZY.md](docs/ROS2_JAZZY.md) for the complete setup.
 
 ```bash
@@ -83,8 +87,7 @@ colcon build --base-paths ros2 --packages-select xarm_density_ros
 source install/setup.bash
 ros2 launch xarm_density_ros simulation.launch.py
 
-# Separate clean conda terminal:
-conda activate xarm-density
+# Python terminal with the project virtual environment activated:
 xarm-sim --ros --steps 6000 --output results/ros-demo
 ```
 
@@ -107,3 +110,37 @@ and vendor workspace builds are preserved under ignored `archive/`. They are
 not needed by this package and are not distributed in a fresh clone. Previously
 published versions remain in Git history. The research paper remains available
 as [density-xarm.pdf](density-xarm.pdf).
+# Fake UF850 arm in MoveIt / RViz
+
+The ROS integration can run the CDF controller against UFACTORY's fake
+`ros2_control` arm. It sends joint velocity jogs into MoveIt Servo, which then
+drives the fake trajectory controller. This starts no physical robot driver.
+
+From the ROS workspace root (`~/Code/ros2_ws`), build this package after the
+`xarm_ros2` packages are available in the workspace:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+colcon build --symlink-install --packages-up-to xarm_density_ros
+```
+
+In a new terminal, start it from the `xarm-density` directory:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source ~/Code/ros2_ws/install/setup.bash
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PYTHONPATH"
+ros2 launch xarm_density_ros fake_moveit.launch.py
+```
+
+RViz opens with the fake UF850 and the density controller starts once it sees
+`/joint_states`. The default controller scene is installed from
+`src/xarm_density/assets/scene.json`. To stop, press Ctrl+C in the launch
+terminal. MoveIt Servo's input timeout also halts the fake controller if
+velocity messages stop arriving.
+
+This path requires the ROS 2 Jazzy `xarm_ros2` MoveIt packages, MoveIt Servo,
+RViz, and the ROS messages used by the launch. The Python environment needs the
+project requirements installed. Activate `.venv` before launching so the
+controller process uses that Python while inheriting ROS's sourced environment.

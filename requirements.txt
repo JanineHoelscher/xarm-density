@@ -1,0 +1,7 @@
+# Runtime dependencies for xarm-density; keep in sync with pyproject.toml.
+numpy==1.26.4
+scipy==1.15.2
+jax==0.4.30
+jaxlib==0.4.30
+clarabel==0.11.1
+pybullet==3.2.7
