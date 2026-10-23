@@ -1,0 +1,37 @@
+name: Simulation and ROS Jazzy
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -e .
+      - run: python -m unittest discover -s tests -v
+        env:
+          JAX_PLATFORMS: cpu
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'
+      - run: xarm-sim --headless
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-run
+          path: results/latest
+  jazzy:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base-noble
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - run: apt-get update && apt-get install -y python3-colcon-common-extensions python3-pytest ros-jazzy-robot-state-publisher
+      - run: |
+          source /opt/ros/jazzy/setup.bash
+          colcon build --base-paths ros2 --packages-select xarm_density_ros
+          source install/setup.bash
+          colcon test --packages-select xarm_density_ros --event-handlers console_direct+
+          colcon test-result --verbose

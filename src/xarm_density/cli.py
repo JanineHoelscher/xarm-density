@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--goal", type=float, nargs=3, metavar=("X","Y","Z"))
     parser.add_argument("--output", type=Path, default=Path("results/latest"))
     parser.add_argument("--backend", choices=("reduced", "full"), default="reduced")
+    parser.add_argument("--ros", action="store_true", help="Enable localhost ROS simulation bridge and wall-clock pacing")
     args = parser.parse_args()
     if args.hz <= 0 or args.steps is not None and args.steps < 1:
         parser.error("Rate and step count must be positive")
@@ -28,16 +29,28 @@ def main():
     scene = load_scene(args.scene)
     if args.goal is not None:
         scene["goal"] = args.goal
-    simulation = None
+    simulation = bridge = None
     try:
         print("Loading bundled robot and compiling controller...", flush=True)
         simulation = Simulation(scene, args.hz, gui=not args.headless, backend=args.backend)
+        if args.ros:
+            from xarm_density.bridge import SimulationBridge
+            bridge = SimulationBridge()
         steps = args.steps or round(scene["reference_duration_s"]*args.hz)
         print(f"Running {steps} steps at {args.hz:g} Hz; backend={args.backend}", flush=True)
         for _ in range(steps):
             start = perf_counter()
-            simulation.step()
-            if not args.headless and not args.fast:
+            if bridge is not None:
+                goal = bridge.receive_goal()
+                if goal is not None:
+                    try:
+                        simulation.set_goal(goal)
+                    except ValueError as error:
+                        print(f"Rejected ROS target: {error}", flush=True)
+            record = simulation.step()
+            if bridge is not None:
+                bridge.publish(simulation, record)
+            if args.ros or (not args.headless and not args.fast):
                 sleep(max(0, simulation.dt-(perf_counter()-start)))
         summary = simulation.summary()
         args.output.mkdir(parents=True, exist_ok=True)
@@ -63,5 +76,7 @@ def main():
     except (ValueError, RuntimeError) as error:
         parser.exit(1, f"Simulation stopped: {error}\n")
     finally:
+        if bridge is not None:
+            bridge.close()
         if simulation is not None:
             simulation.close()

@@ -71,10 +71,26 @@ home-directory paths are needed to launch the standalone simulation. See
 
 ## ROS 2 Jazzy and hardware direction
 
-The standalone cleanup is the first stage. ROS 2 Jazzy support is added in a
-separate stage, with the simulator in conda and the ROS node in its own ROS
-Python environment. Do not mix apt-installed `rclpy` into conda. The standard
-Jazzy binary platform is Ubuntu 24.04; this development host is Ubuntu 22.04.
+The optional ROS package publishes simulated joints/TCP and accepts point
+goals, without MoveIt or Gazebo. Keep conda and ROS in **separate terminals**;
+do not mix apt-installed `rclpy` into conda. Jazzy's binary platform is Ubuntu
+24.04. Follow [docs/ROS2_JAZZY.md](docs/ROS2_JAZZY.md) for the complete setup.
+
+```bash
+# Native ROS terminal, after installing Jazzy and colcon:
+source /opt/ros/jazzy/setup.bash
+colcon build --base-paths ros2 --packages-select xarm_density_ros
+source install/setup.bash
+ros2 launch xarm_density_ros simulation.launch.py
+
+# Separate clean conda terminal:
+conda activate xarm-density
+xarm-sim --ros --steps 6000 --output results/ros-demo
+```
+
+The Jazzy CI job builds/tests in an Ubuntu 24.04 container. This development
+host runs Ubuntu 22.04/Humble; native Jazzy is not locally installed. The bridge
+is simulation-only and never sends physical robot commands.
 
 The current backend performs joint-velocity integration and joint-state
 playback, not motor dynamics. It stops on failed solves, density-floor use,
