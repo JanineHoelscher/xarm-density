@@ -1,0 +1,1434 @@
+\documentclass[conference]{IEEEtran}
+
+% =====================================================================
+% Packages
+% =====================================================================
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{placeins}
+\usepackage{cite}
+\usepackage[hidelinks]{hyperref}
+
+\tcbuselibrary{skins}
+\graphicspath{{../figures/}{figures/}{scripts/figures/}}
+\DeclareGraphicsExtensions{.pdf,.png}
+
+% Prefer PDF figures; fall back to PNG if only PNG is available.
+\newcommand{\paperfigure}[2]{%
+    \includegraphics[width=#2]{#1}%
+}
+
+% Allow text to flow naturally around figures.
+\raggedbottom
+
+% Permit more figures on text pages.
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\setcounter{dbltopnumber}{2}
+
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\bottomfraction}{0.80}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.70}
+\renewcommand{\dbltopfraction}{0.90}
+\renewcommand{\dblfloatpagefraction}{0.70}
+
+% Compact, consistent float spacing.
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{10pt plus 2pt minus 2pt}
+\setlength{\dblfloatsep}{8pt plus 2pt minus 2pt}
+
+% =====================================================================
+% Restrained colors and unbreakable highlight boxes
+% =====================================================================
+\definecolor{paperblue}{RGB}{35,75,110}
+\definecolor{paperteal}{RGB}{20,105,90}
+\definecolor{papergray}{RGB}{85,90,95}
+
+\tcbset{
+    enhanced,
+    sharp corners,
+    boxrule=0pt,
+    leftrule=1.5pt,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt,
+    before skip=7pt,
+    after skip=7pt,
+    fonttitle=\bfseries\small,
+    fontupper=\small
+}
+
+% These boxes are intentionally not breakable.
+\newtcolorbox{methodbox}[1]{
+    colback=paperblue!4,
+    colframe=paperblue,
+    coltitle=paperblue,
+    colbacktitle=paperblue!4,
+    title={#1},
+    attach title to upper={\par\smallskip}
+}
+
+\newtcolorbox{resultbox}[1]{
+    colback=paperteal!4,
+    colframe=paperteal,
+    coltitle=paperteal,
+    colbacktitle=paperteal!4,
+    title={#1},
+    attach title to upper={\par\smallskip}
+}
+
+\newtcolorbox{scopebox}[1]{
+    colback=black!3,
+    colframe=papergray,
+    coltitle=papergray,
+    colbacktitle=black!3,
+    title={#1},
+    attach title to upper={\par\smallskip}
+}
+
+% =====================================================================
+% Table columns and notation
+% =====================================================================
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{Z}{>{\raggedleft\arraybackslash}X}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\trans}{^{\mathsf T}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\col}{col}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\range}{range}
+\DeclareMathOperator{\clip}{clip}
+
+% =====================================================================
+% Title
+% =====================================================================
+\title{Control Density Functions for Whole-Arm
+Obstacle Avoidance and Trajectory Tracking}
+
+\author{
+\IEEEauthorblockN{Author Names}
+\IEEEauthorblockA{
+Department and Institution\\
+City, Country\\
+Email addresses}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+These notes present a control density function quadratic program
+for whole-arm obstacle avoidance and Cartesian trajectory tracking.
+A navigation density combines smooth obstacle factors with a
+regularized target weighting. Parameterizing the density-weighted
+control flux produces an affine transport constraint and a convex
+quadratic program with joint-velocity bounds. The pointwise
+optimization admits a reduction from $168$ flux coefficients
+to at most seven coordinates. The formulation is evaluated on
+a six-joint UF850 manipulator with arm and gripper collision
+geometry. A tracking experiment reaches a final position error
+of $4.84$\,mm while retaining positive recorded obstacle
+clearance. The optimized implementation achieves a median
+nominal-controller and filter time of $1.034$\,ms in a CPU
+replay benchmark. Additional rollouts at $50$, $100$, and
+$240$\,Hz retain positive clearance without measured
+computation-budget overruns. These results establish finite-run
+kinematic performance; physical robot execution and closed-loop
+safety guarantees remain to be validated.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Control density functions, quadratic programming, robot
+manipulators, obstacle avoidance, trajectory tracking.
+\end{IEEEkeywords}
+
+% =====================================================================
+\section{Introduction}
+\label{sec:introduction}
+% =====================================================================
+
+\begin{methodbox}{Main Contributions}
+This work develops a density-based command filter for
+robot manipulator motion in cluttered environments.
+The main contributions are:
+\begin{enumerate}
+    \item \textbf{Finite-dimensional CDF-QP and computational
+    reduction.}
+    A quadratic weighted-flux parameterization yields
+    one aggregate density transport constraint alongside
+    joint-rate bounds. The pointwise problem is reduced
+    from $168$ coefficients to at most seven coordinates
+    without changing its optimum.
+
+    \item \textbf{Whole-arm trajectory tracking.}
+    Smooth factors for all robot-sphere--obstacle-sphere
+    pairs are combined into one density. Arm and gripper
+    geometry thereby influence the filtering of a nominal
+    Cartesian pose-tracking command.
+
+    \item \textbf{Simulation and timing evaluation.}
+    UF850 experiments assess tracking, obstacle clearance,
+    intervention, and numerical feasibility. Optimized CPU
+    benchmarks and multiple update rates assess computation
+    time relative to the available step budgets.
+\end{enumerate}
+\end{methodbox}
+
+The central modeling choice is to combine all
+robot--obstacle sphere pairs in one obstacle factor.
+The resulting QP contains a single scalar density
+transport inequality, rather than an inequality for
+each pair. The number of pairs still affects geometry
+and derivative evaluation.
+
+The formulation is evaluated as a pointwise command
+filter. The reported results demonstrate empirical
+obstacle avoidance and tracking; they do not establish
+sampled-data safety of the recomputed controller.
+
+% =====================================================================
+\section{Preliminaries and Density Construction}
+\label{sec:preliminaries}
+% =====================================================================
+
+\subsection{Navigation Problem}
+
+Consider the control-affine system
+\begin{equation}
+    \dot x=f(x)+g(x)u,
+    \label{eq:system}
+\end{equation}
+where $x\in\mathcal X\subseteq\R^n$,
+$u\in\mathcal U\subseteq\R^m$, and the vector fields
+are continuously differentiable. Let
+$\mathcal X_0$, $\mathcal X_T$, and $\mathcal X_u$
+denote the initial, target, and unsafe sets.
+
+The navigation objective is to reach $\mathcal X_T$
+from $\mathcal X_0$ while avoiding $\mathcal X_u$
+and respecting the input constraints. In trajectory
+tracking, the objective is to follow a prescribed
+reference while maintaining obstacle clearance.
+
+Density-based navigation encodes target and unsafe
+regions through a scalar field. The construction
+is motivated by an occupancy interpretation:
+desirable trajectories should avoid occupying
+the unsafe region and approach the target
+\cite{moyalan2024synthesizing,moyalan2024robust}.
+A suitable condition on density transport is also
+required; the scalar field alone is not a certificate.
+
+\subsection{Smooth Obstacle Factors}
+
+Let the unsafe set be
+\begin{equation}
+    \mathcal X_u=
+    \bigcup_{\ell=1}^{N_c}
+    \{x:d_\ell(x)\leq0\},
+\end{equation}
+where $N_c$ counts modeled collision conditions.
+Positive signed clearance $d_\ell$ indicates
+separation, zero indicates contact, and negative
+clearance indicates penetration.
+
+For a sensing width $\delta_\ell>0$, define
+\begin{equation}
+    S(s)=
+    \begin{cases}
+        0, &s\leq0,\\[1mm]
+        \displaystyle
+        \frac{\exp(-1/s)}
+        {\exp(-1/s)+\exp[-1/(1-s)]},
+        &0<s<1,\\[3mm]
+        1, &s\geq1.
+    \end{cases}
+    \label{eq:smoothstep}
+\end{equation}
+The inverse obstacle bump is
+\begin{equation}
+    \Psi_\ell(x)=
+    S\left(\frac{d_\ell(x)}{\delta_\ell}\right).
+\end{equation}
+It vanishes on the unsafe region, transitions through
+the sensing region, and equals one beyond that region.
+
+Combining the factors gives
+\begin{equation}
+    \Psi(x)=\prod_{\ell=1}^{N_c}\Psi_\ell(x).
+    \label{eq:psi}
+\end{equation}
+Thus, $\Psi=0$ whenever any modeled collision condition
+is active. Outside all sensing regions, $\Psi=1$.
+For an obstacle-free scene, the product is defined
+as one.
+
+\subsection{Target Weighting}
+
+Let $V(x)$ be positive away from the target.
+A navigation density takes the form
+\begin{equation}
+    \rho(x)=\frac{\Psi(x)}{V(x)^\alpha},
+    \qquad \alpha>0.
+    \label{eq:density}
+\end{equation}
+The numerator encodes obstacle geometry and the
+denominator weights the target region
+\cite{moyalan2024synthesizing,moyalan2024robust}.
+
+The robot implementation uses
+\begin{equation}
+    V_\epsilon(q)=
+    \norm{p_{\mathrm{TCP}}(q)-p_g}^2+\epsilon,
+    \qquad \epsilon>0,
+    \label{eq:target}
+\end{equation}
+where $p_{\mathrm{TCP}}$ is the tool-center-point
+position and $p_g$ is the final Cartesian goal.
+The implemented density is
+\begin{equation}
+    \rho(q)=\frac{\Psi(q)}{V_\epsilon(q)^\alpha}.
+    \label{eq:robot-density}
+\end{equation}
+
+Regularization keeps the density finite at the goal.
+Theoretical results requiring a singular target
+density therefore need additional justification
+for this implementation.
+
+% =====================================================================
+\section{Robot Model and Nominal Controller}
+\label{sec:robot}
+% =====================================================================
+
+\subsection{Euler--Lagrange Equations}
+
+For a fully actuated robot with $n_q$ joints,
+let $q\in\R^{n_q}$ denote joint position and
+$v=\dot q$ joint velocity.
+The kinetic energy and Lagrangian are
+\begin{equation}
+    \mathcal T(q,v)=\frac12v\trans M(q)v,
+    \qquad L=\mathcal T-P(q).
+\end{equation}
+The Euler--Lagrange equations give
+\begin{equation}
+    \frac{\mathrm d}{\mathrm dt}
+    \frac{\partial L}{\partial\dot q}
+    -
+    \frac{\partial L}{\partial q}
+    =
+    \tau-F(\dot q).
+\end{equation}
+Equivalently,
+\begin{equation}
+    M(q)\ddot q+C(q,\dot q)\dot q
+    +G(q)+F(\dot q)=\tau,
+    \label{eq:el}
+\end{equation}
+where $M(q)=M(q)\trans\succ0$ is inertia,
+$C(q,\dot q)\dot q$ contains Coriolis and centrifugal
+terms, $G(q)=\nabla_qP(q)$ is gravity, and $F$
+represents friction.
+
+With
+\begin{equation}
+    x=\begin{bmatrix}q\\v\end{bmatrix},
+    \qquad h(q,v)=C(q,v)v+G(q)+F(v),
+\end{equation}
+the control-affine representation is
+\begin{equation}
+    \dot x=
+    \underbrace{
+    \begin{bmatrix}
+        v\\-M(q)^{-1}h(q,v)
+    \end{bmatrix}}_{f(x)}
+    +
+    \underbrace{
+    \begin{bmatrix}
+        0\\M(q)^{-1}
+    \end{bmatrix}}_{g(x)}
+    \tau.
+    \label{eq:el-affine}
+\end{equation}
+
+\subsection{Velocity-Level Implementation}
+
+The evaluated controller uses
+\begin{equation}
+    \dot q=u,\qquad q,u\in\R^6,
+    \label{eq:kinematic}
+\end{equation}
+with componentwise bounds
+\begin{equation}
+    -u_{\max}\mathbf1\leq u\leq u_{\max}\mathbf1.
+    \label{eq:bounds}
+\end{equation}
+Here $u$ is a joint-velocity command.
+
+The simulation integrates
+\begin{equation}
+    q_{k+1}=q_k+\Delta t\,u_k
+    \label{eq:integration}
+\end{equation}
+and assigns the resulting joint positions directly
+to the PyBullet robot. A physical implementation
+would require an inner velocity servo that tracks
+the command accurately.
+
+\begin{scopebox}{Evaluated model}
+The Euler--Lagrange equations describe the physical
+arm. The experiments evaluate joint-velocity
+integration, collision geometry, and computation
+time. Motor dynamics and hardware tracking are
+not evaluated.
+\end{scopebox}
+
+\subsection{Nominal Pose-Tracking Controller}
+\label{sec:nominal}
+
+The nominal controller is OSCBF's
+\texttt{PoseTaskVelocityController}
+\cite{morton2025oscbf}.
+It tracks TCP position and orientation without
+considering obstacles. The CDF-QP subsequently
+filters its joint-velocity command.
+
+\subsubsection{Reference}
+
+The TCP follows a straight Cartesian segment
+with minimum-jerk timing:
+\begin{equation}
+    p_{\mathrm{ref}}(t)
+    =p_0+s(\sigma)(p_g-p_0),
+\end{equation}
+where $p_0=p_{\mathrm{TCP}}(q_0)$,
+$\sigma=\clip(t/T_f,0,1)$, and
+\begin{equation}
+    s(\sigma)=10\sigma^3-15\sigma^4+6\sigma^5.
+\end{equation}
+For $0\leq t\leq T_f$,
+\begin{equation}
+    \dot p_{\mathrm{ref}}(t)=
+    \frac{30\sigma^2-60\sigma^3+30\sigma^4}{T_f}
+    (p_g-p_0).
+\end{equation}
+The duration is $T_f=7$\,s. Reference velocity
+and acceleration vanish at both endpoints.
+The desired tool orientation is fixed:
+\begin{equation}
+    R_d=R(q_0).
+\end{equation}
+
+\subsubsection{Position and Orientation Feedback}
+
+The linear velocity command is
+\begin{equation}
+    v_{\mathrm{cmd}}
+    =
+    \dot p_{\mathrm{ref}}
+    +K_p\bigl(p_{\mathrm{ref}}-p_{\mathrm{TCP}}(q)\bigr).
+\end{equation}
+
+Let $R=[r_1,r_2,r_3]$ and
+$R_d=[r_{d,1},r_{d,2},r_{d,3}]$ map tool-frame
+coordinates to the world frame.
+The controller's orientation-error vector is
+\begin{equation}
+    \mathbf e_R
+    =
+    -\frac12\sum_{i=1}^{3}
+    r_i\times r_{d,i}.
+    \label{eq:orientation-vector}
+\end{equation}
+This vector is expressed in the world frame,
+consistently with the angular Jacobian.
+With zero desired angular velocity,
+\begin{equation}
+    \omega_{\mathrm{cmd}}=-K_R\mathbf e_R.
+\end{equation}
+The gains are $K_p=1.4$ and $K_R=1.0$.
+
+\subsubsection{Joint-Velocity Mapping}
+
+Let $J(q)\in\R^{6\times6}$ be the world-frame
+TCP geometric Jacobian, ordered as linear velocity
+followed by angular velocity.
+The mass-weighted generalized inverse is
+\begin{equation}
+    J^\#=
+    M^{-1}J\trans
+    \left(JM^{-1}J\trans\right)^{-1}.
+    \label{eq:jacobian-inverse}
+\end{equation}
+The nominal command is
+\begin{equation}
+\begin{aligned}
+    \widehat u_{\mathrm{nom}}
+    &=
+    J^\#
+    \begin{bmatrix}
+        v_{\mathrm{cmd}}\\
+        \omega_{\mathrm{cmd}}
+    \end{bmatrix},\\
+    u_{\mathrm{nom}}
+    &=
+    \clip\left(
+        \widehat u_{\mathrm{nom}},
+        -u_{\max}\mathbf1,
+        u_{\max}\mathbf1
+    \right).
+    \label{eq:nominal-command}
+\end{aligned}
+\end{equation}
+Clipping is componentwise, with
+$u_{\max}=0.7$\,rad/s.
+
+The mass-weighted branch uses the direct inverse
+in \eqref{eq:jacobian-inverse}, without a damping
+term. It therefore requires a nonsingular task
+inertia matrix; clipping alone does not address
+singularity handling.
+
+The controller applies a null-space posture task
+only when the number of joints exceeds the
+six-dimensional pose-task dimension. Consequently,
+the configured posture gain contributes no additional
+command for this six-joint experiment.
+
+\begin{methodbox}{Roles of the two controllers}
+The nominal controller supplies Cartesian tracking
+and orientation regulation. The CDF-QP minimizes
+deviation from that command while imposing the
+pointwise density transport condition and joint-rate
+bounds. Tracking is an objective, rather than
+a separate hard constraint.
+\end{methodbox}
+
+% =====================================================================
+\section{CDF-QP and Finite-Dimensional Approximation}
+\label{sec:cdf}
+% =====================================================================
+
+\subsection{Density Transport}
+
+For a differentiable feedback field, define
+\begin{equation}
+    R(x)=
+    \nabla_x\cdot
+    \left(\rho(x)[f(x)+g(x)u(x)]\right).
+    \label{eq:residual}
+\end{equation}
+CDF-based navigation conditions constrain this
+residual over an operating domain under the
+assumptions of the associated theorem
+\cite{moyalan2024synthesizing,moyalan2024robust}.
+A positive numerical margin is written as
+\begin{equation}
+    R(x)\geq\eta,\qquad \eta>0.
+\end{equation}
+
+The divergence contains spatial derivatives
+of the feedback, motivating a parameterized
+feedback field.
+Introduce
+\begin{equation}
+    w(x)=\rho(x)u(x),\qquad
+    d_\rho(x)=\nabla_x\cdot(\rho(x)f(x)).
+\end{equation}
+With $g=[g_1,\ldots,g_m]$,
+\begin{equation}
+\begin{aligned}
+    R(x)={}&d_\rho(x)\\
+    &+\sum_{j=1}^{m}
+    \left[
+        g_j(x)\trans\nabla_xw_j(x)
+        +w_j(x)\nabla_x\cdot g_j(x)
+    \right].
+    \label{eq:flux-residual}
+\end{aligned}
+\end{equation}
+
+For the Euler--Lagrange model,
+$\nabla_x\cdot g_j=0$, since $M$ depends only
+on $q$. With torque-weighted flux $w=\rho\tau$,
+\begin{equation}
+    R(q,v)=d_\rho(q,v)
+    +\sum_{j=1}^{n_q}
+    e_j\trans M(q)^{-1}\nabla_vw_j(q,v).
+\end{equation}
+This identity describes the torque-level formulation.
+
+For the implemented velocity model,
+$f=0$ and $g=I_6$, giving
+\begin{equation}
+    R(q)=\nabla_q\cdot w(q).
+\end{equation}
+
+\subsection{Quadratic Flux Basis}
+
+Set $z=q/\pi$ and collect monomials through
+total degree two:
+\begin{equation}
+    \Phi_2(q)=
+    \col\left(
+        1,\{z_i\}_{i=1}^{6},
+        \{z_i z_j\}_{1\leq i\leq j\leq6}
+    \right)
+    \in\R^{28}.
+\end{equation}
+There are one constant, six linear,
+and twenty-one quadratic terms.
+
+Define
+\begin{equation}
+    b(q)=\Psi(q)\Phi_2(q),\qquad
+    w_j(q;\theta_j)=b(q)\trans\theta_j,
+\end{equation}
+where $\theta_j\in\R^{28}$.
+Stacking all channels gives
+\begin{equation}
+    \theta=\col(\theta_1,\ldots,\theta_6)\in\R^{168}.
+\end{equation}
+
+Where $\rho>0$, the recovered input is
+\begin{equation}
+    u_j(q;\theta_j)
+    =
+    \frac{w_j(q;\theta_j)}{\rho(q)}
+    =
+    V_\epsilon(q)^\alpha
+    \Phi_2(q)\trans\theta_j.
+\end{equation}
+The obstacle factor cancels in the quotient,
+but remains in the transport constraint and
+influences the optimized coefficients.
+
+\subsection{Command and Transport Maps}
+
+For numerical evaluation, define
+\begin{equation}
+    \bar\rho(q)=\max\{\rho(q),10^{-10}\},
+\end{equation}
+and
+\begin{equation}
+    B(q)=I_6\otimes
+    \frac{b(q)\trans}{\bar\rho(q)}
+    \in\R^{6\times168}.
+\end{equation}
+The command is $u_\theta=B\theta$.
+
+Define the transport row
+\begin{equation}
+    a(q)\trans=
+    \left[
+        \left(\frac{\partial b}{\partial q_1}\right)\trans
+        \ \cdots\
+        \left(\frac{\partial b}{\partial q_6}\right)\trans
+    \right].
+\end{equation}
+Then
+\begin{equation}
+    R_\theta(q)
+    =
+    \sum_{j=1}^{6}\frac{\partial w_j}{\partial q_j}
+    =
+    a(q)\trans\theta.
+    \label{eq:linear-residual}
+\end{equation}
+All derivatives hold $\theta$ fixed.
+
+\subsection{Finite-Dimensional QP}
+
+At the current configuration, solve
+\begin{equation}
+\begin{aligned}
+    \theta^\star=\argmin_\theta\quad&
+    \frac12\norm{B\theta-u_{\mathrm{nom}}}^2\\
+    &+\frac{\lambda_u}{2}\norm{B\theta}^2
+    +\frac{\lambda_\theta}{2}\norm{\theta}^2\\
+    \text{subject to}\quad&
+    a\trans\theta\geq\eta,\\
+    &-u_{\max}\mathbf1
+    \leq B\theta\leq u_{\max}\mathbf1.
+    \label{eq:qp}
+\end{aligned}
+\end{equation}
+The filtered command is $u^\star=B\theta^\star$.
+
+The objective preserves the nominal command,
+penalizes command magnitude, and regularizes
+the coefficients. Its Hessian and linear term are
+\begin{align}
+    H&=(1+\lambda_u)B\trans B+\lambda_\theta I,\\
+    c&=-B\trans u_{\mathrm{nom}}.
+\end{align}
+For $\lambda_\theta>0$, $H$ is positive definite,
+so a feasible QP has a unique optimizer.
+
+There are $168$ coefficients and $13$ scalar
+inequalities: one aggregate transport condition
+and twelve joint-rate bounds.
+
+\subsection{Exact Pointwise Reduction}
+
+The command and constraint depend on $\theta$
+through six input values and one residual.
+Define
+\begin{equation}
+    A(q)=
+    \begin{bmatrix}
+        B(q)\\a(q)\trans
+    \end{bmatrix}
+    \in\R^{7\times168}.
+\end{equation}
+Let $Q\in\R^{168\times r}$ have orthonormal
+columns spanning $\range(A\trans)$, with $r\leq7$.
+Any coefficient vector decomposes as
+\begin{equation}
+    \theta=Q\xi+\theta_\perp,\qquad
+    A\theta_\perp=0.
+\end{equation}
+The component $\theta_\perp$ changes neither
+the command nor the residual, but increases
+$\norm{\theta}^2$. Therefore,
+$\theta_\perp=0$ at the optimum.
+
+Setting
+\begin{equation}
+    \widetilde B=BQ,\qquad
+    \widetilde a=Q\trans a
+\end{equation}
+gives
+\begin{equation}
+\begin{aligned}
+    \xi^\star=\argmin_{\xi\in\R^r}\quad&
+    \frac12\norm{\widetilde B\xi-u_{\mathrm{nom}}}^2\\
+    &+\frac{\lambda_u}{2}\norm{\widetilde B\xi}^2
+    +\frac{\lambda_\theta}{2}\norm{\xi}^2\\
+    \text{subject to}\quad&
+    \widetilde a\trans\xi\geq\eta,\\
+    &-u_{\max}\mathbf1
+    \leq\widetilde B\xi
+    \leq u_{\max}\mathbf1.
+    \label{eq:reduced}
+\end{aligned}
+\end{equation}
+This reduction is exact for the stated pointwise
+objective and constraints. It is performed after
+evaluating the frozen-coefficient transport map.
+
+The optimized implementation uses a seven-coordinate
+QP and fused JAX evaluation. On the tested replay
+samples, its maximum command difference from
+the full formulation is
+$1.11\times10^{-5}$\,rad/s, below the specified
+$10^{-4}$\,rad/s tolerance.
+
+\begin{methodbox}{Computational structure}
+The flux field has $168$ coefficients, but the
+pointwise optimization needs only six command values
+and one transport residual. Coefficient directions
+that affect neither quantity can be removed,
+leaving at most seven optimization coordinates.
+\end{methodbox}
+
+\subsection{Scope of the Pointwise Condition}
+
+The residual in \eqref{eq:linear-residual}
+is evaluated with frozen coefficients.
+The online controller recomputes
+$\theta^\star(q,t)$, whose spatial derivatives
+are absent from that expression.
+The constraint is also checked only at sampled states.
+
+The measured residual therefore does not establish
+a domain-wide inequality or sampled-data invariance
+for the recomputed policy.
+The experiments report empirical tracking,
+clearance, and numerical feasibility.
+
+The QP has no slack and no general feasibility
+guarantee. The density floor changes $w=\rho u$
+wherever it is active. Self-collision and
+joint-position constraints are not included.
+
+% =====================================================================
+\section{UF850 Setup and Implementation}
+\label{sec:setup}
+% =====================================================================
+
+\subsection{Whole-Arm Geometry}
+
+Robot sphere $a$ has center $p_a(q)$ and radius
+$r_a$. Obstacle $b$ has center $o_b$ and radius
+$R_b$. Their surface clearance is
+\begin{equation}
+    d_{ab}(q)=
+    \norm{p_a(q)-o_b}-r_a-R_b.
+\end{equation}
+The obstacle factor is
+\begin{equation}
+    \Psi(q)=
+    \prod_{a=1}^{N_r}\prod_{b=1}^{N_o}
+    S\left(\frac{d_{ab}(q)}{\delta}\right).
+    \label{eq:robot-psi}
+\end{equation}
+
+The closed-gripper model contains $20$ collision
+spheres: $13$ arm/wrist spheres and seven additional
+gripper-cover spheres attached to the wrist frame.
+With five obstacle spheres, $100$ pairwise factors
+enter \eqref{eq:robot-psi}, while the QP retains
+one aggregate transport inequality.
+
+Robot sphere centers are transformed from their
+local link coordinates using differentiable
+forward kinematics. The gripper cover is specific
+to the fixed closed configuration.
+The collision-model implementation provides the
+local sphere centers and radii
+\cite{xarmimplementation}.
+
+Independent PyBullet mesh-distance and obstacle-contact
+queries provide a second geometric measurement.
+Sphere and mesh clearances need not agree because
+they use different robot representations.
+
+\subsection{Scene and Parameters}
+
+The experiment uses a seven-second Cartesian reference
+through five static obstacles.
+The initial joint configuration is
+\begin{equation}
+    q_0=[0,-0.7,-1.0,0,0.8,0]\trans\ \mathrm{rad},
+\end{equation}
+and the final goal is
+\begin{equation}
+    p_g=[0.38,0.35,0.43]\trans\ \mathrm{m}.
+\end{equation}
+The gripper remains closed, and the TCP is
+offset $0.172$\,m along the wrist tool axis.
+
+Table~\ref{tab:setup} summarizes the setup.
+Obstacle centers and radii are listed in
+Appendix~\ref{app:obstacles}.
+
+\begin{table}[t]
+    \caption{Robot, scene, and controller setup.}
+    \label{tab:setup}
+    \centering
+    \small
+    \begin{tabularx}{\columnwidth}{@{}YZ@{}}
+        \toprule
+        Setting & Value\\
+        \midrule
+        Robot & UF850, six joints\\
+        Gripper & Fixed closed configuration\\
+        Robot collision spheres & $20$\\
+        Obstacle spheres & $5$\\
+        Robot--obstacle pairs & $100$\\
+        Aggregate transport inequalities & $1$\\
+        Reference duration $T_f$ & $7$ s\\
+        TCP offset & $0.172$ m\\
+        Position/orientation gains & $1.4/1.0$\\
+        Joint-rate bound $u_{\max}$ & $0.7$ rad/s\\
+        Sensing width $\delta$ & $0.10$ m\\
+        Density exponent $\alpha$ & $0.2$\\
+        Target regularization $\epsilon$ & $10^{-3}$\\
+        Transport margin $\eta$ & $0.01$\\
+        Input penalty $\lambda_u$ & $0.02$\\
+        Coefficient penalty $\lambda_\theta$ & $2\times10^{-4}$\\
+        Optimized rollout rates & $50$, $100$, $240$ Hz\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+The moving reference enters through
+$u_{\mathrm{nom}}$. The density denominator
+retains the fixed final goal.
+Thus, this is a static-density filter with a
+time-varying nominal command, rather than the
+time-varying density construction in
+\cite{narayanan2024dynamic}.
+
+\begin{algorithm}[t]
+\caption{Online Density-Based Joint-Velocity Filter}
+\label{alg:cdf}
+\begin{algorithmic}[1]
+\Require Kinematics, collision geometry, reference,
+QP parameters, and timestep $\Delta t$
+\State Initialize geometry and the cached solver
+\State Compile and warm up differentiable functions
+\For{each sample $k$}
+    \State Obtain $q_k$ and reference values at $t_k$
+    \State Compute $u_{\mathrm{nom}}(q_k,t_k)$
+    \State Evaluate clearances, $\Psi$, $\rho$, and basis derivatives
+    \State Assemble command and transport maps
+    \State Solve \eqref{eq:qp} or its reduction \eqref{eq:reduced}
+    \If{the solve is unsuccessful}
+        \State Flag failure and terminate the experiment
+    \EndIf
+    \State Recover the filtered command $u_k$
+    \State Integrate $q_{k+1}=q_k+\Delta t\,u_k$
+    \State Update simulated joint positions
+    \State Record tracking, clearance, residual, and timing
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\section{Simulation Results}
+\label{sec:results}
+% =====================================================================
+
+\subsection{Evaluation Protocol}
+
+Two related evaluations are reported:
+\begin{enumerate}
+    \item \textbf{Tracking experiment:}
+    a seven-second trajectory sampled at $240$\,Hz
+    with $1681$ state samples and $1680$ commands.
+
+    \item \textbf{Optimized implementation benchmark:}
+    CPU replay timing and additional rollouts
+    at $50$, $100$, and $240$\,Hz.
+\end{enumerate}
+These correspond to repository validations~9
+and~10, respectively.
+
+The coordinate, error, command, and intervention plots
+describe the tracking experiment. The robot snapshots
+show the optimized $100$\,Hz rollout.
+Timing plots describe the optimized implementation.
+
+\begin{figure*}[!t]
+    \centering
+    \paperfigure{fig08_robot_snapshots}{\textwidth}
+    \caption{UF850 motion in the optimized $100$\,Hz
+    rollout at $t=0$, $2.33$, $4.67$, and $7.00$\,s.
+    The dashed curve is the TCP reference, the blue curve
+    is the accumulated TCP path, and the green marker
+    denotes the goal. The gripper remains closed.
+    Snapshots are rendered from saved joint states.}
+    \label{fig:snapshots}
+\end{figure*}
+
+\subsection{Robot Motion Through Clutter}
+
+Figure~\ref{fig:snapshots} shows the robot raising
+and reconfiguring its arm while approaching the goal.
+The TCP path departs from the straight reference
+during the middle of the motion and approaches
+the goal in the final snapshot.
+
+The optimized $100$\,Hz rollout ends with a
+$4.76$\,mm position error. Its minimum sphere
+and mesh clearances are $20.41$\,mm and
+$48.49$\,mm, with zero recorded obstacle-contact
+steps. These measurements complement the snapshots,
+which show only four selected instants.
+
+\subsection{Cartesian Tracking}
+
+Figure~\ref{fig:coordinates} compares the TCP
+coordinates with the moving reference in the
+tracking experiment.
+The largest visible deviation occurs in $y$
+during the middle of the motion.
+The $z$ coordinate initially remains below its
+reference and subsequently rises toward the
+final height.
+
+\begin{figure}[!tbp]
+    \centering
+    \paperfigure{fig01_tcp_tracking}{\columnwidth}
+    \caption{TCP coordinates in the tracking experiment.
+    Dashed curves denote the reference and solid curves
+    denote the CDF-QP response. Time is simulated time.}
+    \label{fig:coordinates}
+\end{figure}
+
+Position error is
+\begin{equation}
+    e_p(t)=
+    \norm{p_{\mathrm{TCP}}(q(t))-p_{\mathrm{ref}}(t)}.
+\end{equation}
+The reported orientation error is the rotation angle
+\begin{equation}
+    e_{\mathrm{ang}}(t)=
+    \cos^{-1}\left[
+        \clip\left(
+            \frac{\tr(R_d\trans R(q(t)))-1}{2},
+            -1,1
+        \right)
+    \right].
+\end{equation}
+This scalar angle differs from the feedback vector
+$\mathbf e_R$ in \eqref{eq:orientation-vector}.
+
+Figure~\ref{fig:errors} shows errors increasing
+during the middle of the motion and decreasing
+near the final reference.
+The position RMS and maximum errors are
+$66.82$\,mm and $115.37$\,mm.
+The orientation RMS and maximum errors are
+$8.80^\circ$ and $16.06^\circ$.
+
+The final errors decrease to $4.84$\,mm and
+$1.59^\circ$. Thus, the experiment demonstrates
+small terminal errors after a substantial
+transient tracking deviation.
+
+\begin{figure}[!tbp]
+    \centering
+    \paperfigure{fig02_tracking_errors}{\columnwidth}
+    \caption{Position error relative to the moving
+    reference and orientation angle relative to the
+    fixed desired tool orientation. Time is simulated time.}
+    \label{fig:errors}
+\end{figure}
+
+\begin{table}[!tbp]
+    \caption{Tracking errors. RMS values use all
+    $1681$ uniformly spaced state samples.}
+    \label{tab:tracking}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\columnwidth}{@{}Yrrr@{}}
+        \toprule
+        Error & RMS & Maximum & Final\\
+        \midrule
+        Position (mm) & 66.82 & 115.37 & 4.84\\
+        Orientation (deg) & 8.80 & 16.06 & 1.59\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\subsection{Joint Commands and Intervention}
+
+Figure~\ref{fig:joints} compares nominal and
+filtered joint velocities.
+The filter modifies several joints simultaneously,
+particularly joints 1, 2, 3, and 5 during
+the middle of the motion.
+The maximum absolute command is $0.684$\,rad/s,
+below the $0.7$\,rad/s bound.
+
+\begin{figure*}[!t]
+    \centering
+    \paperfigure{fig03_joint_velocities}{\textwidth}
+    \caption{Nominal and filtered joint velocities.
+    Dashed curves denote nominal commands, solid curves
+    denote filtered commands, and dotted lines mark
+    the $\pm0.7$\,rad/s bounds.
+    A command at $t_k$ acts over the following
+    integration interval.}
+    \label{fig:joints}
+\end{figure*}
+
+Define intervention as
+\begin{equation}
+    I_k=\norm{u_k-u_{\mathrm{nom},k}}_2.
+\end{equation}
+Its RMS and maximum are $0.178$\,rad/s
+and $0.328$\,rad/s. The zero-order-hold integral is
+\begin{equation}
+    \Delta t\sum_k I_k=0.876\ \mathrm{rad}.
+\end{equation}
+
+The lower panel of Fig.~\ref{fig:safety}
+shows intervention concentrated in the middle
+of the motion, overlapping the tracking-error
+transient.
+Intervention includes the effects of regularization
+and the transport constraint; it is not a
+safety-constraint activation measure or a causal
+comparison with an unfiltered rollout.
+
+\subsection{Clearance and Transport Residual}
+
+Both recorded clearance measures remain positive
+in Fig.~\ref{fig:safety}.
+Their minima are $20.37$\,mm for the collision
+spheres and $48.54$\,mm for the PyBullet mesh queries.
+No obstacle-contact steps are reported.
+
+The residual remains near $\eta=0.01$ over
+much of the trajectory and rises near the end.
+No margin violations are recorded using a
+$10^{-8}$ tolerance, and all QPs are reported
+feasible.
+
+\begin{figure}[!tbp]
+    \centering
+    \paperfigure{fig04_safety_intervention}{\columnwidth}
+    \caption{Clearance, transport residual, and intervention.
+    Top: minimum sphere and mesh clearances.
+    Middle: raw CDF residual and margin $\eta=0.01$.
+    Bottom: $\|u-u_{\mathrm{nom}}\|_2$.
+    Clearance is evaluated after integration;
+    residual and intervention are evaluated at the
+    command state before integration.}
+    \label{fig:safety}
+\end{figure}
+
+\begin{table}[t]
+    \caption{Clearance, feasibility, and command modification
+    in the tracking experiment.}
+    \label{tab:clearance}
+    \centering
+    \small
+    \begin{tabularx}{\columnwidth}{@{}YZ@{}}
+        \toprule
+        Metric & Value\\
+        \midrule
+        Minimum sphere clearance & $20.37$ mm\\
+        Minimum mesh clearance & $48.54$ mm\\
+        Obstacle-contact steps & $0$\\
+        Minimum transport residual & $0.0100$\\
+        Maximum joint speed & $0.684$ rad/s\\
+        RMS intervention & $0.178$ rad/s\\
+        Maximum intervention & $0.328$ rad/s\\
+        Integrated intervention & $0.876$ rad\\
+        All QPs feasible & Yes\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{resultbox}{Tracking and clearance}
+The tracking experiment reaches a final position
+error of $4.84$\,mm while retaining positive
+recorded clearances and zero obstacle contacts.
+The larger RMS and maximum errors quantify
+the transient departure from the reference.
+\end{resultbox}
+
+% Flush tracking figures before beginning the timing discussion.
+\FloatBarrier
+
+\subsection{Optimized CPU Timing}
+
+% Declare the wide figure before the detailed timing discussion.
+\begin{figure*}[!t]
+    \centering
+    \paperfigure{fig06_optimized_timing}{\textwidth}
+    \caption{Optimized CPU replay timing over $480$
+    evaluations after warm-up.
+    Left: empirical cumulative distributions on a
+    logarithmic time axis.
+    Right: median, $95$th-percentile, and maximum
+    durations. Timing scopes are nested, not additive.
+    Bars summarize measured samples rather than
+    confidence intervals across independent experiments.}
+    \label{fig:optimized-timing}
+\end{figure*}
+
+The optimized implementation was benchmarked on an
+Intel Core i7-10700K CPU at $3.80$\,GHz using
+JAX~0.4.30 and Clarabel~0.11.1, with one requested
+BLAS thread.
+The benchmark evaluates $160$ saved states
+over three repeats, giving $480$ timed
+evaluations after explicit warm-up.
+
+Figure~\ref{fig:optimized-timing} and
+Table~\ref{tab:timing} summarize the results.
+The median nominal-controller and filter time is
+$1.034$\,ms, the $95$th percentile is
+$1.091$\,ms, and the maximum is $1.562$\,ms.
+The filter median is $0.757$\,ms, while the
+solver-call median is $0.057$\,ms.
+
+\begin{table}[t]
+    \caption{Optimized CPU replay timing in milliseconds.}
+    \label{tab:timing}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\columnwidth}{@{}Yrrr@{}}
+        \toprule
+        Component & Median & p95 & Maximum\\
+        \midrule
+        Nominal + filter & 1.034 & 1.091 & 1.562\\
+        Density filter & 0.757 & 0.811 & 1.287\\
+        Solver only & 0.057 & 0.094 & 0.108\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+These timing scopes are nested: the filter includes
+the solver, and nominal plus filter includes the
+filter. They must not be added together.
+
+Nominal-plus-filter timing includes reference
+generation, nominal control, JAX evaluation and
+host synchronization, matrix construction,
+checks, QP update and solve, and filter-return
+diagnostics.
+It excludes Bullet stepping, rendering, sensor
+input, and communication.
+
+\subsection{Fixed-Rate Rollouts}
+
+% Declare the wide figure before the detailed rollout discussion.
+\begin{figure*}[!t]
+    \centering
+    \paperfigure{fig07_fixed_rate_budget}{\textwidth}
+    \caption{Measured computation time as a percentage
+    of the simulated step budget.
+    Left: nominal controller and filter.
+    Right: the loop including Bullet stepping and
+    diagnostics. All measured maxima remain below
+    the dashed $100\%$ budget line.
+    The rollouts are headless and unpaced.}
+    \label{fig:budget}
+\end{figure*}
+
+Additional rollouts use simulated update rates
+of $50$, $100$, and $240$\,Hz, corresponding
+to step budgets of $20$, $10$, and $4.167$\,ms.
+Each follows the seven-second reference.
+
+Figure~\ref{fig:budget} normalizes computation
+time by the associated budget.
+The controller timing includes nominal control
+and the filter.
+The diagnostic-loop timing additionally includes
+joint integration, Bullet stepping, mesh and
+contact queries, and logged diagnostics.
+
+At $100$\,Hz, the maximum controller and loop
+times are $1.409$\,ms and $2.245$\,ms.
+At $240$\,Hz, they are $1.873$\,ms and
+$3.373$\,ms, approximately $45\%$ and $81\%$
+of the $4.167$\,ms budget.
+No measured controller or diagnostic-loop
+budget overruns occur in these runs.
+
+\begin{table}[t]
+    \caption{Fixed-rate computation times.
+    Budgets and durations are in milliseconds.}
+    \label{tab:rates}
+    \centering
+    \small
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabularx}{\columnwidth}{@{}Yrrrr@{}}
+        \toprule
+        Rate & Budget & Ctrl.\ p95 & Ctrl.\ max & Loop max\\
+        \midrule
+        50 Hz  & 20.000 & 1.083 & 1.405 & 2.250\\
+        100 Hz & 10.000 & 1.096 & 1.409 & 2.245\\
+        240 Hz & 4.167  & 1.131 & 1.873 & 3.373\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+All runs reach the target, all QPs solve successfully,
+and no obstacle contacts or density-floor
+activations are recorded.
+Minimum clearances and terminal errors remain
+similar across update rates
+(Table~\ref{tab:rate-safety}).
+The maximum joint speed remains below
+$0.7$\,rad/s at every tested rate.
+
+\begin{table}[t]
+    \caption{Minimum clearance and terminal error
+    across update rates. All distances are in millimeters.}
+    \label{tab:rate-safety}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\columnwidth}{@{}Yrrr@{}}
+        \toprule
+        Rate & Sphere & Mesh & Final error\\
+        \midrule
+        50 Hz  & 20.49 & 48.40 & 4.62\\
+        100 Hz & 20.41 & 48.49 & 4.76\\
+        240 Hz & 20.37 & 48.54 & 4.84\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{resultbox}{Optimized implementation}
+The median nominal-plus-filter replay time is
+$1.034$\,ms. All tested update rates retain positive
+clearance without measured budget overruns.
+The $100$\,Hz run uses at most $2.245$\,ms
+of its $10$\,ms budget when diagnostics are included.
+\end{resultbox}
+
+\subsection{Interpretation and Remaining Validation}
+
+The figures provide complementary evidence:
+snapshots show robot configuration, tracking plots
+quantify reference deviation, command plots show
+joint-rate limits, and clearance queries assess
+the modeled collision geometry.
+Timing experiments assess computation separately
+from tracking accuracy.
+
+The rollouts are headless, unpaced kinematic
+experiments. Measured durations below simulated
+step budgets demonstrate computational headroom
+for these finite runs, not hard real-time bounds.
+Rendering, sensing, communication, scheduling
+jitter, and physical motor tracking remain
+outside the reported controller timing.
+
+The experiments also use one scene and reference.
+They do not establish robustness across initial
+conditions or obstacle placements, general
+sphere coverage, self-collision avoidance,
+or superiority over a matched CBF baseline.
+
+% Ensure no result figures or tables appear after the conclusion.
+\FloatBarrier
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+A density-based command filter was formulated
+using smooth obstacle factors and a quadratic
+weighted-flux basis.
+The QP combines all modeled robot--obstacle pairs
+in one aggregate transport condition alongside
+joint-rate bounds.
+Its $168$-coefficient pointwise formulation
+admits reduction to at most seven coordinates.
+
+UF850 simulations demonstrate tracking through
+clutter with positive recorded clearance and
+zero obstacle contacts.
+The optimized implementation achieves
+millisecond-scale CPU updates and remains
+within the measured step budgets at $50$,
+$100$, and $240$\,Hz.
+Further work is required to analyze the
+recomputed sampled controller and validate
+geometry coverage and physical execution.
+
+% =====================================================================
+\appendices
+\section{Obstacle Configuration}
+\label{app:obstacles}
+% =====================================================================
+
+Table~\ref{tab:obstacles} lists the five static
+obstacle spheres in the world frame.
+Robot collision-sphere centers and radii are
+specified by the implementation's
+\texttt{make\_uf850\_collision\_model}
+function \cite{xarmimplementation}.
+
+\begin{table}[!ht]
+    \caption{World-frame obstacle centers and radii.
+    All values are in meters.}
+    \label{tab:obstacles}
+    \centering
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabularx}{\columnwidth}{@{}Yrrrr@{}}
+        \toprule
+        Obstacle & $x$ & $y$ & $z$ & Radius\\
+        \midrule
+        1 & 0.5665 & 0.2553 & 0.3056 & 0.075\\
+        2 & 0.4900 & 0.2844 & 0.5415 & 0.080\\
+        3 & 0.2924 & 0.2063 & 0.2649 & 0.076\\
+        4 & 0.6790 & 0.0892 & 0.4238 & 0.084\\
+        5 & 0.5021 & 0.3967 & 0.3615 & 0.061\\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\FloatBarrier
+
+% =====================================================================
+\begin{thebibliography}{9}
+% =====================================================================
+
+\bibitem{moyalan2024synthesizing}
+J. Moyalan, S. S. K. S. Narayanan, A. Zheng, and U. Vaidya,
+``Synthesizing controller for safe navigation using control
+density function,''
+arXiv:2403.14464, 2024.
+
+\bibitem{moyalan2024robust}
+J. Moyalan, S. S. K. S. Narayanan, and U. Vaidya,
+``Control density function for robust safety and convergence,''
+arXiv:2407.05133, 2024.
+
+\bibitem{narayanan2024dynamic}
+S. S. K. S. Narayanan, J. Moyalan, and U. Vaidya,
+``Safe navigation in dynamic environments using density functions,''
+arXiv:2411.12206, 2024.
+
+\bibitem{morton2025oscbf}
+D. Morton and M. Pavone,
+``Safe, task-consistent manipulation with operational space
+control barrier functions,''
+in \emph{Proc. IEEE/RSJ Int. Conf. Intelligent Robots
+and Systems (IROS)}, 2025, pp. 187--194.
+
+\bibitem{xarmimplementation}
+S. Krishnamoorthy,
+``xarm-density: UF850 density-based control implementation.''
+[Online]. Available:
+\url{https://github.com/sriram-2502/xarm-density}
+
+\end{thebibliography}
+
+% =====================================================================
+% Author checklist -- not printed
+% =====================================================================
+%
+% Figures are loaded from figures/ with PDF preferred over PNG.
+%
+% Required basenames:
+% fig01_tcp_tracking
+% fig02_tracking_errors
+% fig03_joint_velocities
+% fig04_safety_intervention
+% fig06_optimized_timing
+% fig07_fixed_rate_budget
+% fig08_robot_snapshots
+%
+% Tracking experiment: repository validation 9.
+% Optimized benchmark and snapshots: repository validation 10.
+%
+% Short boxes are intentionally unbreakable.
+% Tables are constrained to column width with tabularx.
+% Float barriers keep all result figures before the conclusion
+% and the obstacle table before the references.
+%
+% Before external submission:
+% - replace the author placeholders;
+% - record exact installed OSCBF and optimized-controller revisions;
+% - verify the installed nominal-controller source matches the
+%   explicit orientation and inverse definitions in this document;
+% - update references to final publication metadata where appropriate.
+%
+% The reduction uses an orthonormal coordinate construction;
+% an implementation may use an equivalent parameterization.
+
+\end{document}

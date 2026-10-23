@@ -19,3 +19,15 @@ __pycache__/
 *.log
 *.out
 *.synctex.gz
+*.fdb_latexmk
+*.fls
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.run.xml
+*.bcf
+/scripts/latex/build/
+/scripts/latex/density-xarm.pdf
+/scripts/latex/density-xarm-optimized.pdf

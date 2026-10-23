@@ -1,0 +1,48 @@
+{
+  "input_trajectory_sha256": "625c7af75b32620ba261d95c5dda9f728003a49f5cf42794d00d324dff96d5dc",
+  "input_metrics_sha256": "050f5f5c1f4059e27698bc003293c53633529a520908f99ff681d97ecfecbf9c",
+  "simulation_rerun": false,
+  "samples": {
+    "states": 1681,
+    "controls": 1680
+  },
+  "dt_s": 0.004166666666666667,
+  "duration_s": 7.0,
+  "figure_generation_environment_only": {
+    "cpu": "Intel(R) Core(TM) i7-10700K CPU @ 3.80GHz",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "python": "3.10.20",
+    "numpy": "1.26.4",
+    "matplotlib": "3.10.9"
+  },
+  "original_timing_processor_and_backend": "not recorded in source artifacts",
+  "statistics": {
+    "position_rms_mm": 66.82079006231682,
+    "position_max_mm": 115.37349751658607,
+    "position_final_mm": 4.838891979642509,
+    "orientation_rms_deg": 8.796508083034126,
+    "orientation_max_deg": 16.055062202537407,
+    "orientation_final_deg": 1.587790894284352,
+    "intervention_rms_rad_s": 0.17816876256078482,
+    "intervention_max_rad_s": 0.32849380640158804,
+    "intervention_integral_rad": 0.8764532261464169,
+    "command_modified_percent": 100.0,
+    "sphere_min_mm": 20.369575648533228,
+    "mesh_min_mm": 48.54463049374312,
+    "residual_min": 0.00999999988134002,
+    "residual_margin_violation_steps_tol_1e8": 0,
+    "contact_steps": 0,
+    "joint_speed_max_rad_s": 0.6840598713390065,
+    "fk_disagreement_max_m": 3.275708725182709e-08,
+    "qp_mean_ms": 10.626443949877284,
+    "qp_median_ms": 10.405075503513217,
+    "qp_p95_ms": 13.115149782970548,
+    "qp_max_ms": 14.892632141709328,
+    "solver_median_ms": 7.278262986801565,
+    "solver_p95_ms": 9.98366242274642,
+    "solver_max_ms": 10.322583140805364,
+    "qp_exceeds_dt_percent": 100.0,
+    "all_qps_feasible_recorded": true,
+    "density_floor_activation": null
+  }
+}

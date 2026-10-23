@@ -16,6 +16,9 @@ dependencies = [
 [project.scripts]
 xarm-sim = "xarm_density.cli:main"
 
+[project.optional-dependencies]
+paper = ["matplotlib==3.10.9"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

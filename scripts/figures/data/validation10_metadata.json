@@ -1,0 +1,257 @@
+{
+  "scene": {
+    "index": 9,
+    "name": "Closed-gripper TCP trajectory tracking in clutter",
+    "purpose": "Track a smooth Cartesian reference with the closed-gripper fingertip midpoint while the whole-arm CDF-QP avoids a dense field of larger spherical obstacles.",
+    "filter_mode": "cdf",
+    "safety_mode": "whole_body",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.38,
+      0.35,
+      0.43
+    ],
+    "obstacle_centers": [
+      [
+        0.5665,
+        0.2553,
+        0.3056
+      ],
+      [
+        0.49,
+        0.2844,
+        0.5415
+      ],
+      [
+        0.2924,
+        0.2063,
+        0.2649
+      ],
+      [
+        0.679,
+        0.0892,
+        0.4238
+      ],
+      [
+        0.5021,
+        0.3967,
+        0.3615
+      ]
+    ],
+    "obstacle_radii": [
+      0.075,
+      0.08,
+      0.076,
+      0.084,
+      0.061
+    ],
+    "dt": 0.004166666666666667,
+    "steps": 4800,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.1,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20,
+    "with_gripper": true,
+    "gripper_opening": 0.85,
+    "track_tcp": true,
+    "tcp_offset": [
+      0.0,
+      0.0,
+      0.172
+    ],
+    "track_orientation": true,
+    "kp_rotation": 1.0,
+    "reference_duration_s": 7.0
+  },
+  "requested_rates_hz": [
+    100.0,
+    50.0,
+    240.0
+  ],
+  "environment": {
+    "cpu": "Intel(R) Core(TM) i7-10700K CPU @ 3.80GHz",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "jax_devices": [
+      "TFRT_CPU_0"
+    ],
+    "python": "3.10.20",
+    "blas_threads_requested": 1,
+    "versions": {
+      "numpy": "1.26.4",
+      "scipy": "1.15.2",
+      "jax": "0.4.30",
+      "jaxlib": "0.4.30",
+      "clarabel": "0.11.1"
+    }
+  },
+  "source_sha256": "625c7af75b32620ba261d95c5dda9f728003a49f5cf42794d00d324dff96d5dc",
+  "states_per_repeat": 160,
+  "repeats": 3,
+  "full": {
+    "total_time": {
+      "median_ms": 7.862866041250527,
+      "p95_ms": 9.79793961159885,
+      "max_ms": 12.036984087899327,
+      "mean_ms": 8.132249032496475
+    },
+    "nominal_time": {
+      "median_ms": 0.2908086171373725,
+      "p95_ms": 0.3829115652479231,
+      "max_ms": 0.7514359895139933,
+      "mean_ms": 0.3019702305512813
+    },
+    "controller_time": {
+      "median_ms": 7.531235110946,
+      "p95_ms": 9.46587425423786,
+      "max_ms": 11.750650126487017,
+      "mean_ms": 7.819643439142965
+    },
+    "solver_solve_time": {
+      "median_ms": 4.940706072375178,
+      "p95_ms": 6.844377645757048,
+      "max_ms": 7.719834102317691,
+      "mean_ms": 5.230218449529882
+    },
+    "warmup_wall_s": 1.764994899975136,
+    "density_floor_steps": 0
+  },
+  "reduced": {
+    "total_time": {
+      "median_ms": 1.0340865701436996,
+      "p95_ms": 1.0913213132880628,
+      "max_ms": 1.5616738237440586,
+      "mean_ms": 1.0435656620150742
+    },
+    "nominal_time": {
+      "median_ms": 0.2655091229826212,
+      "p95_ms": 0.2759933588095009,
+      "max_ms": 0.32398803159594536,
+      "mean_ms": 0.2678022288212863
+    },
+    "controller_time": {
+      "median_ms": 0.7574809715151787,
+      "p95_ms": 0.8109858958050609,
+      "max_ms": 1.2867669574916363,
+      "mean_ms": 0.7661312658456154
+    },
+    "solver_solve_time": {
+      "median_ms": 0.057470984756946564,
+      "p95_ms": 0.09449332719668745,
+      "max_ms": 0.10813586413860321,
+      "mean_ms": 0.0629379913637725
+    },
+    "warmup_wall_s": 0.8269342151470482,
+    "density_floor_steps": 0
+  },
+  "equivalence": {
+    "maximum_command_difference_rad_s": 1.1099062564967621e-05,
+    "maximum_coefficient_difference_norm": 0.0005689885337240465,
+    "command_tolerance_rad_s": 0.0001
+  },
+  "rollouts": [
+    {
+      "rate_hz": 100.0,
+      "dt_ms": 10.0,
+      "steps": 700,
+      "simulated_time_s": 7.0,
+      "control": {
+        "median_ms": 1.0040014749392867,
+        "p95_ms": 1.0957736405543983,
+        "max_ms": 1.4092971105128527,
+        "mean_ms": 1.016030300940786
+      },
+      "loop_with_diagnostics": {
+        "median_ms": 1.7717850860208273,
+        "p95_ms": 1.9314496312290428,
+        "max_ms": 2.245382871478796,
+        "mean_ms": 1.790540230660034
+      },
+      "control_deadline_misses": 0,
+      "loop_deadline_misses": 0,
+      "minimum_sphere_clearance_m": 0.020414448680982494,
+      "minimum_mesh_clearance_m": 0.0484870345901577,
+      "contact_steps": 0,
+      "minimum_residual": 0.009999999968034754,
+      "maximum_speed_rad_s": 0.6851012392771627,
+      "density_floor_steps": 0,
+      "position_rms_m": 0.0668811500353067,
+      "position_max_m": 0.1154417249989917,
+      "final_target_error_m": 0.004757726503754871,
+      "target_reached": true,
+      "all_qps_solved": true
+    },
+    {
+      "rate_hz": 50.0,
+      "dt_ms": 20.0,
+      "steps": 350,
+      "simulated_time_s": 7.0,
+      "control": {
+        "median_ms": 0.9977155132219195,
+        "p95_ms": 1.0833408101461828,
+        "max_ms": 1.4046139549463987,
+        "mean_ms": 1.0121129253613097
+      },
+      "loop_with_diagnostics": {
+        "median_ms": 1.761557999998331,
+        "p95_ms": 1.8974380334839225,
+        "max_ms": 2.2501081693917513,
+        "mean_ms": 1.7848307865538768
+      },
+      "control_deadline_misses": 0,
+      "loop_deadline_misses": 0,
+      "minimum_sphere_clearance_m": 0.020491373695265186,
+      "minimum_mesh_clearance_m": 0.048395564724546855,
+      "contact_steps": 0,
+      "minimum_residual": 0.009999999998571929,
+      "maximum_speed_rad_s": 0.6869246485399161,
+      "density_floor_steps": 0,
+      "position_rms_m": 0.0669521759211003,
+      "position_max_m": 0.11555861054279204,
+      "final_target_error_m": 0.004620606964290133,
+      "target_reached": true,
+      "all_qps_solved": true
+    },
+    {
+      "rate_hz": 240.0,
+      "dt_ms": 4.166666666666667,
+      "steps": 1680,
+      "simulated_time_s": 7.0,
+      "control": {
+        "median_ms": 1.0075474856421351,
+        "p95_ms": 1.130647270474583,
+        "max_ms": 1.873390981927514,
+        "mean_ms": 1.0296818829374388
+      },
+      "loop_with_diagnostics": {
+        "median_ms": 1.7786490498110652,
+        "p95_ms": 1.9756691181100905,
+        "max_ms": 3.373421961441636,
+        "mean_ms": 1.813356521112534
+      },
+      "control_deadline_misses": 0,
+      "loop_deadline_misses": 0,
+      "minimum_sphere_clearance_m": 0.02036957660727748,
+      "minimum_mesh_clearance_m": 0.048544631323698614,
+      "contact_steps": 0,
+      "minimum_residual": 0.00999999994445355,
+      "maximum_speed_rad_s": 0.6840598624434806,
+      "density_floor_steps": 0,
+      "position_rms_m": 0.0668406749081453,
+      "position_max_m": 0.11537349764558028,
+      "final_target_error_m": 0.004838896982871882,
+      "target_reached": true,
+      "all_qps_solved": true
+    }
+  ]
+}

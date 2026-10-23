@@ -9,6 +9,10 @@ Start with the [code and workflow guide](docs/CODE_EXPLAINER.md) for a file map,
 the simulation/control flow, and the current ROS interface versus the future
 hardware integration steps.
 
+Paper sources, figures, and saved CSVs are tracked under
+[scripts/latex](scripts/latex/README.md) and [scripts/figures](scripts/figures/README.md)
+for rebuilding the paper and replotting its recorded numerical results.
+
 ## Standalone setup: no ROS required
 
 ```bash
@@ -134,8 +138,10 @@ interfaces, and hardware validation are still needed before physical execution.
 
 ## Local archive
 
-Superseded ROS/Gazebo loaders, experiments, paper source, plots, recorded runs,
-and vendor workspace builds are preserved under ignored `archive/`. They are
+Superseded ROS/Gazebo loaders, experiments, workspace builds, and historical
+copies are preserved under ignored `archive/`. Active paper sources, figure
+exports, plotting helpers, and recorded CSV inputs are tracked under `scripts/`.
+The remaining archived files are
 not needed by this package and are not distributed in a fresh clone. Previously
 published versions remain in Git history. The research paper remains available
 as [density-xarm.pdf](density-xarm.pdf).

@@ -1,0 +1,4 @@
+# Preserve checksum-verified inputs exactly, including across Windows checkouts.
+scripts/figures/data/* -text
+# csv.writer uses CRLF; retain its exports without whitespace warnings.
+scripts/figures/table*.csv -text whitespace=cr-at-eol

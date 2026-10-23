@@ -1,0 +1,97 @@
+{
+  "config": {
+    "index": 9,
+    "name": "Closed-gripper TCP trajectory tracking in clutter",
+    "purpose": "Track a smooth Cartesian reference with the closed-gripper fingertip midpoint while the whole-arm CDF-QP avoids a dense field of larger spherical obstacles.",
+    "filter_mode": "cdf",
+    "safety_mode": "whole_body",
+    "q_start": [
+      0.0,
+      -0.7,
+      -1.0,
+      0.0,
+      0.8,
+      0.0
+    ],
+    "goal": [
+      0.38,
+      0.35,
+      0.43
+    ],
+    "obstacle_centers": [
+      [
+        0.5665,
+        0.2553,
+        0.3056
+      ],
+      [
+        0.49,
+        0.2844,
+        0.5415
+      ],
+      [
+        0.2924,
+        0.2063,
+        0.2649
+      ],
+      [
+        0.679,
+        0.0892,
+        0.4238
+      ],
+      [
+        0.5021,
+        0.3967,
+        0.3615
+      ]
+    ],
+    "obstacle_radii": [
+      0.075,
+      0.08,
+      0.076,
+      0.084,
+      0.061
+    ],
+    "dt": 0.004166666666666667,
+    "steps": 4800,
+    "target_radius": 0.035,
+    "qdot_limit": 0.7,
+    "kp_task": 1.4,
+    "kp_posture": 0.2,
+    "sensing_width": 0.1,
+    "residual_margin": 0.01,
+    "capture_every": 12,
+    "gif_fps": 20,
+    "with_gripper": true,
+    "gripper_opening": 0.85,
+    "track_tcp": true,
+    "tcp_offset": [
+      0.0,
+      0.0,
+      0.172
+    ],
+    "track_orientation": true,
+    "kp_rotation": 1.0,
+    "reference_duration_s": 7.0
+  },
+  "metrics": {
+    "steps": 1680,
+    "simulated_time_s": 7.0,
+    "target_reached": true,
+    "final_target_error_m": 0.004838891979642508,
+    "maximum_reference_tracking_error_m": 0.11537349751658607,
+    "final_orientation_error_deg": 1.587790894284352,
+    "maximum_orientation_error_deg": 16.055062202537407,
+    "minimum_modeled_clearance_m": 0.0203695756485332,
+    "minimum_link_sphere_clearance_m": 0.020369575648533228,
+    "minimum_pybullet_mesh_clearance_m": 0.04854463049374312,
+    "pybullet_contact_steps": 0,
+    "minimum_cdf_residual": 0.00999999988134002,
+    "all_qps_feasible": true,
+    "maximum_joint_speed_rad_s": 0.6840598713390065,
+    "maximum_jax_bullet_fk_error_m": 3.275708725182709e-08,
+    "mean_qp_time_ms": 10.626443949877284,
+    "maximum_qp_time_ms": 14.892632141709328,
+    "mean_solver_time_ms": 7.575295109667683
+  }
+}

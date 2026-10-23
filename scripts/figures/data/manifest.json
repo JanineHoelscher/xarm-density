@@ -1,0 +1,809 @@
+{
+  "format_version": 1,
+  "float_encoding": "17 significant decimal digits",
+  "datasets": [
+    {
+      "source": "results/cdf_qp_validations/validation_09/trajectory.npz",
+      "source_sha256": "625c7af75b32620ba261d95c5dda9f728003a49f5cf42794d00d324dff96d5dc",
+      "dt_s": 0.004166666666666667,
+      "groups": [
+        {
+          "csv": "validation09_1681_samples.csv",
+          "sha256": "643a0d3f6fd79279baee26605053045df918be73d95ab2bcb4e6df524be991a5",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "q_states_0",
+            "q_states_1",
+            "q_states_2",
+            "q_states_3",
+            "q_states_4",
+            "q_states_5",
+            "ee_jax_states_0",
+            "ee_jax_states_1",
+            "ee_jax_states_2",
+            "ee_bullet_states_0",
+            "ee_bullet_states_1",
+            "ee_bullet_states_2",
+            "reference_positions_0",
+            "reference_positions_1",
+            "reference_positions_2",
+            "orientation_errors"
+          ],
+          "arrays": [
+            {
+              "key": "q_states",
+              "shape": [
+                1681,
+                6
+              ],
+              "dtype": "float64",
+              "start": 2,
+              "stop": 8
+            },
+            {
+              "key": "ee_jax_states",
+              "shape": [
+                1681,
+                3
+              ],
+              "dtype": "float64",
+              "start": 8,
+              "stop": 11
+            },
+            {
+              "key": "ee_bullet_states",
+              "shape": [
+                1681,
+                3
+              ],
+              "dtype": "float64",
+              "start": 11,
+              "stop": 14
+            },
+            {
+              "key": "reference_positions",
+              "shape": [
+                1681,
+                3
+              ],
+              "dtype": "float64",
+              "start": 14,
+              "stop": 17
+            },
+            {
+              "key": "orientation_errors",
+              "shape": [
+                1681
+              ],
+              "dtype": "float64",
+              "start": 17,
+              "stop": 18
+            }
+          ]
+        },
+        {
+          "csv": "validation09_1680_samples.csv",
+          "sha256": "8b2e24589f33cb66219a4c9c9c25f55cccd881e8e345b9911b7144c26f3756ba",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "next_time_s",
+            "nominal_controls_0",
+            "nominal_controls_1",
+            "nominal_controls_2",
+            "nominal_controls_3",
+            "nominal_controls_4",
+            "nominal_controls_5",
+            "filtered_controls_0",
+            "filtered_controls_1",
+            "filtered_controls_2",
+            "filtered_controls_3",
+            "filtered_controls_4",
+            "filtered_controls_5",
+            "residuals",
+            "modeled_clearances",
+            "sphere_clearances",
+            "bullet_clearances",
+            "contact_counts",
+            "solve_times",
+            "solver_times"
+          ],
+          "arrays": [
+            {
+              "key": "nominal_controls",
+              "shape": [
+                1680,
+                6
+              ],
+              "dtype": "float64",
+              "start": 3,
+              "stop": 9
+            },
+            {
+              "key": "filtered_controls",
+              "shape": [
+                1680,
+                6
+              ],
+              "dtype": "float64",
+              "start": 9,
+              "stop": 15
+            },
+            {
+              "key": "residuals",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 15,
+              "stop": 16
+            },
+            {
+              "key": "modeled_clearances",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 16,
+              "stop": 17
+            },
+            {
+              "key": "sphere_clearances",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 17,
+              "stop": 18
+            },
+            {
+              "key": "bullet_clearances",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 18,
+              "stop": 19
+            },
+            {
+              "key": "contact_counts",
+              "shape": [
+                1680
+              ],
+              "dtype": "int64",
+              "start": 19,
+              "stop": 20
+            },
+            {
+              "key": "solve_times",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 20,
+              "stop": 21
+            },
+            {
+              "key": "solver_times",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 21,
+              "stop": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "results/cdf_qp_validations/validation_10/performance/replay_timing.npz",
+      "source_sha256": "fd6543772056061ed618c73b8b420acbe7f2133968cf1764c4b84657a83b778c",
+      "dt_s": null,
+      "groups": [
+        {
+          "csv": "validation10_replay_160_samples.csv",
+          "sha256": "b7a7abd034baaf62bf4efc9fc37bf7c5e0ca2cbcf0814c4822d434b09c93e418",
+          "columns": [
+            "sample_index",
+            "indices"
+          ],
+          "arrays": [
+            {
+              "key": "indices",
+              "shape": [
+                160
+              ],
+              "dtype": "int64",
+              "start": 1,
+              "stop": 2
+            }
+          ]
+        },
+        {
+          "csv": "validation10_replay_480_samples.csv",
+          "sha256": "af2aed55154fe38bc03dfad9d26840e846324fbd68787e573c2ce3b851a992b0",
+          "columns": [
+            "sample_index",
+            "repeat_index",
+            "saved_state_index",
+            "saved_state_time_s",
+            "full_total_time",
+            "full_nominal_time",
+            "full_controller_time",
+            "full_solver_solve_time",
+            "reduced_total_time",
+            "reduced_nominal_time",
+            "reduced_controller_time",
+            "reduced_solver_solve_time"
+          ],
+          "arrays": [
+            {
+              "key": "full_total_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 4,
+              "stop": 5
+            },
+            {
+              "key": "full_nominal_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 5,
+              "stop": 6
+            },
+            {
+              "key": "full_controller_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 6,
+              "stop": 7
+            },
+            {
+              "key": "full_solver_solve_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 7,
+              "stop": 8
+            },
+            {
+              "key": "reduced_total_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 8,
+              "stop": 9
+            },
+            {
+              "key": "reduced_nominal_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 9,
+              "stop": 10
+            },
+            {
+              "key": "reduced_controller_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 10,
+              "stop": 11
+            },
+            {
+              "key": "reduced_solver_solve_time",
+              "shape": [
+                480
+              ],
+              "dtype": "float64",
+              "start": 11,
+              "stop": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "results/cdf_qp_validations/validation_10/performance/rollout_100hz.npz",
+      "source_sha256": "237f2319fc5fc7bd008c599261081431b36323eb76e89a02fd1c8864f0fd6cc1",
+      "dt_s": 0.01,
+      "groups": [
+        {
+          "csv": "validation10_100hz_700_samples.csv",
+          "sha256": "10d41ad8ac9e7a1ba6adda1ac5c6fc6a928f013d652afc0c26cfdbea89966a4d",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "next_time_s",
+            "control_time_s",
+            "filter_time_s",
+            "solver_time_s",
+            "mesh_clearance_m",
+            "sphere_clearance_m",
+            "position_error_m",
+            "residual",
+            "contacts",
+            "speed",
+            "floor",
+            "loop_time_s"
+          ],
+          "arrays": [
+            {
+              "key": "control_time_s",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 3,
+              "stop": 4
+            },
+            {
+              "key": "filter_time_s",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 4,
+              "stop": 5
+            },
+            {
+              "key": "solver_time_s",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 5,
+              "stop": 6
+            },
+            {
+              "key": "mesh_clearance_m",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 6,
+              "stop": 7
+            },
+            {
+              "key": "sphere_clearance_m",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 7,
+              "stop": 8
+            },
+            {
+              "key": "position_error_m",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 8,
+              "stop": 9
+            },
+            {
+              "key": "residual",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 9,
+              "stop": 10
+            },
+            {
+              "key": "contacts",
+              "shape": [
+                700
+              ],
+              "dtype": "int64",
+              "start": 10,
+              "stop": 11
+            },
+            {
+              "key": "speed",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 11,
+              "stop": 12
+            },
+            {
+              "key": "floor",
+              "shape": [
+                700
+              ],
+              "dtype": "bool",
+              "start": 12,
+              "stop": 13
+            },
+            {
+              "key": "loop_time_s",
+              "shape": [
+                700
+              ],
+              "dtype": "float64",
+              "start": 13,
+              "stop": 14
+            }
+          ]
+        },
+        {
+          "csv": "validation10_100hz_701_samples.csv",
+          "sha256": "10865e519dc486da4eca1a9734df17222bf30c5185f183002f1e851fca3e6c45",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "q_states_0",
+            "q_states_1",
+            "q_states_2",
+            "q_states_3",
+            "q_states_4",
+            "q_states_5"
+          ],
+          "arrays": [
+            {
+              "key": "q_states",
+              "shape": [
+                701,
+                6
+              ],
+              "dtype": "float64",
+              "start": 2,
+              "stop": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "results/cdf_qp_validations/validation_10/performance/rollout_50hz.npz",
+      "source_sha256": "334e03a3ce9e0ba419578bf19ff9f3b3563e3548b11ddb4c5cbe641215a0a7c8",
+      "dt_s": 0.02,
+      "groups": [
+        {
+          "csv": "validation10_50hz_350_samples.csv",
+          "sha256": "d280cb52034642dac03e9fcd066777548b34be67f1ff7122c90cad8a1e8c5987",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "next_time_s",
+            "control_time_s",
+            "filter_time_s",
+            "solver_time_s",
+            "mesh_clearance_m",
+            "sphere_clearance_m",
+            "position_error_m",
+            "residual",
+            "contacts",
+            "speed",
+            "floor",
+            "loop_time_s"
+          ],
+          "arrays": [
+            {
+              "key": "control_time_s",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 3,
+              "stop": 4
+            },
+            {
+              "key": "filter_time_s",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 4,
+              "stop": 5
+            },
+            {
+              "key": "solver_time_s",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 5,
+              "stop": 6
+            },
+            {
+              "key": "mesh_clearance_m",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 6,
+              "stop": 7
+            },
+            {
+              "key": "sphere_clearance_m",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 7,
+              "stop": 8
+            },
+            {
+              "key": "position_error_m",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 8,
+              "stop": 9
+            },
+            {
+              "key": "residual",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 9,
+              "stop": 10
+            },
+            {
+              "key": "contacts",
+              "shape": [
+                350
+              ],
+              "dtype": "int64",
+              "start": 10,
+              "stop": 11
+            },
+            {
+              "key": "speed",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 11,
+              "stop": 12
+            },
+            {
+              "key": "floor",
+              "shape": [
+                350
+              ],
+              "dtype": "bool",
+              "start": 12,
+              "stop": 13
+            },
+            {
+              "key": "loop_time_s",
+              "shape": [
+                350
+              ],
+              "dtype": "float64",
+              "start": 13,
+              "stop": 14
+            }
+          ]
+        },
+        {
+          "csv": "validation10_50hz_351_samples.csv",
+          "sha256": "17a8751cf0b4bbb4b756d98561b965daf933504f88c482eb00a29125bced00e9",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "q_states_0",
+            "q_states_1",
+            "q_states_2",
+            "q_states_3",
+            "q_states_4",
+            "q_states_5"
+          ],
+          "arrays": [
+            {
+              "key": "q_states",
+              "shape": [
+                351,
+                6
+              ],
+              "dtype": "float64",
+              "start": 2,
+              "stop": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "results/cdf_qp_validations/validation_10/performance/rollout_240hz.npz",
+      "source_sha256": "d440173246b8eb37e07b5b5b57038b3ca5a0d048f43e9299d7ae37282f23a243",
+      "dt_s": 0.004166666666666667,
+      "groups": [
+        {
+          "csv": "validation10_240hz_1680_samples.csv",
+          "sha256": "b36d82a087effc3d5abfcdfd11358ea30dc0ccd6a60603b7cbb69858e7471fd6",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "next_time_s",
+            "control_time_s",
+            "filter_time_s",
+            "solver_time_s",
+            "mesh_clearance_m",
+            "sphere_clearance_m",
+            "position_error_m",
+            "residual",
+            "contacts",
+            "speed",
+            "floor",
+            "loop_time_s"
+          ],
+          "arrays": [
+            {
+              "key": "control_time_s",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 3,
+              "stop": 4
+            },
+            {
+              "key": "filter_time_s",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 4,
+              "stop": 5
+            },
+            {
+              "key": "solver_time_s",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 5,
+              "stop": 6
+            },
+            {
+              "key": "mesh_clearance_m",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 6,
+              "stop": 7
+            },
+            {
+              "key": "sphere_clearance_m",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 7,
+              "stop": 8
+            },
+            {
+              "key": "position_error_m",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 8,
+              "stop": 9
+            },
+            {
+              "key": "residual",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 9,
+              "stop": 10
+            },
+            {
+              "key": "contacts",
+              "shape": [
+                1680
+              ],
+              "dtype": "int64",
+              "start": 10,
+              "stop": 11
+            },
+            {
+              "key": "speed",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 11,
+              "stop": 12
+            },
+            {
+              "key": "floor",
+              "shape": [
+                1680
+              ],
+              "dtype": "bool",
+              "start": 12,
+              "stop": 13
+            },
+            {
+              "key": "loop_time_s",
+              "shape": [
+                1680
+              ],
+              "dtype": "float64",
+              "start": 13,
+              "stop": 14
+            }
+          ]
+        },
+        {
+          "csv": "validation10_240hz_1681_samples.csv",
+          "sha256": "6c0d3fc0c8e179417ef0ebf8d28591c03f3cd0f0bf1baebe2620baa366aecfe0",
+          "columns": [
+            "sample_index",
+            "time_s",
+            "q_states_0",
+            "q_states_1",
+            "q_states_2",
+            "q_states_3",
+            "q_states_4",
+            "q_states_5"
+          ],
+          "arrays": [
+            {
+              "key": "q_states",
+              "shape": [
+                1681,
+                6
+              ],
+              "dtype": "float64",
+              "start": 2,
+              "stop": 8
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "json_inputs": [
+    {
+      "source": "results/cdf_qp_validations/validation_09/metrics.json",
+      "copy": "validation09_metadata.json",
+      "sha256": "050f5f5c1f4059e27698bc003293c53633529a520908f99ff681d97ecfecbf9c"
+    },
+    {
+      "source": "results/cdf_qp_validations/validation_10/performance/benchmark.json",
+      "copy": "validation10_metadata.json",
+      "sha256": "b43b357ece05af32da5c276cb240b759914c6478f0706c23413c106b2a027eaf"
+    }
+  ],
+  "benchmark_environment": {
+    "cpu": "Intel(R) Core(TM) i7-10700K CPU @ 3.80GHz",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "jax_devices": [
+      "TFRT_CPU_0"
+    ],
+    "python": "3.10.20",
+    "blas_threads_requested": 1,
+    "versions": {
+      "numpy": "1.26.4",
+      "scipy": "1.15.2",
+      "jax": "0.4.30",
+      "jaxlib": "0.4.30",
+      "clarabel": "0.11.1"
+    }
+  }
+}
