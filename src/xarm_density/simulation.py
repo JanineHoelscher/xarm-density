@@ -1,54 +1,57 @@
 """Reusable, ROS-free UF850 kinematic simulation and control loop."""
 
-from dataclasses import replace
-import json
 from pathlib import Path
 from time import perf_counter
-import xml.etree.ElementTree as ET
 
 import jax.numpy as jnp
 import numpy as np
 import pybullet as p
 
 from xarm_density.nominal import PoseReference
-from xarm_density.robot import DEFAULT_URDF, RobotWorldConfig, UF850CDFController
+from xarm_density.robot import RobotWorldConfig, UF850CDFController
+from xarm_density.config import load_config, validate_config
 
 ASSETS = Path(__file__).resolve().parent / "assets"
 
 
 def load_scene(path=None):
-    scene = json.loads(Path(path or ASSETS / "scene.json").read_text())
-    q = np.asarray(scene["q_start"], dtype=float)
-    centers = np.asarray(scene["obstacle_centers"], dtype=float).reshape(-1, 3)
-    radii = np.asarray(scene["obstacle_radii"], dtype=float)
-    if q.shape != (6,) or centers.shape[0] != len(radii):
-        raise ValueError("Scene needs six joints and matching obstacle centers/radii")
-    if not all(np.all(np.isfinite(x)) for x in [q, centers, radii, scene["goal"]]) or np.any(radii <= 0):
-        raise ValueError("Scene contains invalid geometry")
-    if scene["reference_duration_s"] <= 0 or not 0 < scene["qdot_limit"] <= .7:
-        raise ValueError("Use positive duration and joint speed in (0, 0.7]")
-    return scene
+    return load_config(path)
 
 
 class Simulation:
     """Joint-velocity integration, not a motor-dynamics or hardware interface."""
 
-    def __init__(self, scene=None, hz=100., gui=False, backend="reduced"):
-        if not np.isfinite(hz) or hz <= 0:
+    def __init__(self, scene=None, hz=None, gui=False, backend=None):
+        if hz is not None and (not np.isfinite(hz) or hz <= 0):
             raise ValueError("Control rate must be finite and positive")
-        self.scene = load_scene() if scene is None else scene
+        self.scene = load_scene() if scene is None else validate_config(scene)
+        if hz is not None:
+            self.scene['dt_s'] = 1 / hz
+        if backend is not None:
+            self.scene['qp_backend'] = backend
+        self.scene = validate_config(self.scene)
         scene = self.scene
-        self.dt, self.time, self.reference_start = 1 / hz, 0., 0.
+        self.dt, self.time, self.reference_start = scene['dt_s'], 0., 0.
         config = RobotWorldConfig(
             q_start=tuple(scene["q_start"]), goal=tuple(scene["goal"]),
             obstacle_centers=tuple(map(tuple, scene["obstacle_centers"])),
             obstacle_radii=tuple(scene["obstacle_radii"]), safety_mode="whole_body",
             sensing_width=scene["sensing_width"], residual_margin=scene["residual_margin"],
             qdot_limit=scene["qdot_limit"], include_gripper=True,
-            gripper_opening=scene["gripper_opening"], tcp_offset=(0., 0., .172), dt=self.dt,
+            gripper_opening=scene["gripper_opening"], tcp_offset=tuple(scene['tcp_offset']), dt=self.dt,
+            alpha=scene['alpha'], v_epsilon=scene['v_epsilon'],
+            target_radius=scene['target_radius'], ee_radius=scene['ee_radius'],
+            nominal_speed=scene['nominal_speed'], nominal_gain=scene['nominal_gain'],
+            task_weight=scene['task_weight'], cartesian_task_weight=scene['cartesian_task_weight'],
+            input_weight=scene['input_weight'], theta_weight=scene['theta_weight'],
+            density_floor=scene['density_floor'], basis_scale=tuple(scene['basis_scale']),
+            collision_padding=scene['collision_padding'], solver_settings=scene['solver_settings'],
         )
-        self.controller = UF850CDFController(config, qp_backend=backend)
+        self.controller = UF850CDFController(config, qp_backend=scene['qp_backend'])
         self.q = np.asarray(scene["q_start"], dtype=float)
+        robot = self.controller.robot
+        if np.any(self.q < np.asarray(robot.joint_lower_limits)) or np.any(self.q > np.asarray(robot.joint_upper_limits)):
+            raise ValueError('q_start exceeds the URDF joint limits')
         self.reference = PoseReference(self.controller.robot, scene, self.q)
         self.client = p.connect(p.GUI if gui else p.DIRECT)
         if self.client < 0:
@@ -74,13 +77,14 @@ class Simulation:
         visual = p.createVisualShape(p.GEOM_SPHERE, radius=.018, rgbaColor=(0,.6,.3,1), physicsClientId=self.client)
         self.goal_id = p.createMultiBody(baseMass=0, baseVisualShapeIndex=visual,
                                          basePosition=scene["goal"], physicsClientId=self.client)
-        p.resetDebugVisualizerCamera(1.25, 35, -15, [.3,.15,.38], physicsClientId=self.client)
+        p.resetDebugVisualizerCamera(scene['camera_distance'], scene['camera_yaw'],
+                                    scene['camera_pitch'], scene['camera_target'], physicsClientId=self.client)
         self._display()
         if self.controller.whole_body_clearance(self.q) <= 0:
             self.close()
             raise ValueError("Starting configuration collides with the modeled obstacles")
         # Compile and initialize both control and diagnostic kernels before timing.
-        for _ in range(3):
+        for _ in range(scene['warmup_steps']):
             self.controller.solve(self.q, self.reference.command(self.q, 0.))
         np.asarray(self.controller.ee_position(jnp.asarray(self.q)))
         self.records = []
@@ -94,10 +98,10 @@ class Simulation:
 
     def set_goal(self, goal):
         goal = np.asarray(goal, dtype=float)
-        if goal.shape != (3,) or not np.all(np.isfinite(goal)) or np.linalg.norm(goal) > 1.0:
-            raise ValueError("Goal must be three finite coordinates within the 1 m preview envelope")
+        if goal.shape != (3,) or not np.all(np.isfinite(goal)) or np.linalg.norm(goal) > self.scene['goal_envelope_radius']:
+            raise ValueError("Goal must be three finite coordinates within the configured preview envelope")
         for center, radius in zip(self.scene["obstacle_centers"], self.scene["obstacle_radii"]):
-            if np.linalg.norm(goal-center) <= radius + .055:
+            if np.linalg.norm(goal-center) <= radius + self.scene['ee_radius']:
                 raise ValueError("Goal is inside the preliminary tool exclusion region")
         self.reference.start = np.asarray(self.controller.ee_position(jnp.asarray(self.q)))
         self.reference.goal = goal
@@ -111,9 +115,9 @@ class Simulation:
         result = self.controller.solve(self.q, nominal)
         command_elapsed = perf_counter()-start
         u = np.asarray(result["input"])
-        if not np.all(np.isfinite(u)) or np.max(np.abs(u)) > self.scene["qdot_limit"] + 1e-6:
+        if not np.all(np.isfinite(u)) or np.max(np.abs(u)) > self.scene["qdot_limit"] + self.scene['command_tolerance']:
             raise RuntimeError("Invalid joint command")
-        if result["density_floor_active"] or result["residual"] < self.scene["residual_margin"]-1e-6:
+        if result["density_floor_active"] or result["residual"] < self.scene["residual_margin"]-self.scene['residual_tolerance']:
             raise RuntimeError("Density floor or infeasible transport residual; stopping simulation")
         next_q = self.q + self.dt*u
         robot = self.controller.robot
@@ -155,9 +159,9 @@ class Simulation:
         return {"steps": len(self.records), "simulated_time_s": self.time,
                 "hz": 1/self.dt, "dt_ms": self.dt*1000,
                 "final_target_error_m": self.records[-1]["target_error_m"],
-                "target_reached": self.records[-1]["target_error_m"] <= .035,
-                "minimum_sphere_clearance_m": min(r["sphere_clearance_m"] for r in self.records),
-                "minimum_mesh_clearance_m": min(r["mesh_clearance_m"] for r in self.records),
+                "target_reached": self.records[-1]["target_error_m"] <= self.scene['target_radius'],
+                "minimum_sphere_clearance_m": min(r["sphere_clearance_m"] for r in self.records) if self.obstacles else None,
+                "minimum_mesh_clearance_m": min(r["mesh_clearance_m"] for r in self.records) if self.obstacles else None,
                 "contact_steps": sum(r["contacts"]>0 for r in self.records),
                 "control_median_ms": float(np.median(times)),
                 "control_p95_ms": float(np.percentile(times,95)),

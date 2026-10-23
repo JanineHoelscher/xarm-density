@@ -5,31 +5,56 @@ entry point loads the arm with its gripper, five spherical obstacles, a
 Cartesian pose nominal controller, and the optimized seven-coordinate CDF-QP.
 The default control rate is 100 Hz (10 ms).
 
+Start with the [code and workflow guide](docs/CODE_EXPLAINER.md) for a file map,
+the simulation/control flow, and the current ROS interface versus the future
+hardware integration steps.
+
 ## Standalone setup: no ROS required
 
 ```bash
 git clone https://github.com/sriram-2502/xarm-density.git
 cd xarm-density
 conda env create -f environment.yml
-conda activate xarm-density
-xarm-sim
+conda activate xarm
+python run_simulation.py
 ```
 
-Run from a clean shell without sourcing a ROS installation. `xarm-sim` opens
+Run from a clean shell without sourcing a ROS installation. This script opens
 PyBullet and runs the seven-second clutter scene. Initial JAX compilation may
 take a few seconds. The GUI requires a desktop/OpenGL display.
+
+`run_simulation.py` shows the experiment workflow explicitly: display settings,
+open the simulator, run the control loop, save results, and close resources.
+Shared helpers live in `src/xarm_density/cli.py`; the nominal-control/CDF-QP/
+joint-integration step is in `src/xarm_density/simulation.py`. The installed
+`xarm-sim` command uses the same helpers and accepts the same arguments. Run the
+script from the repository root after activating the environment above.
+
+```bash
+python run_simulation.py --help
+python run_simulation.py --headless --quiet
+```
+
+The launcher prints the chosen config, rate, start, target, progress, and a
+short result summary. `--quiet` suppresses periodic progress only. Interrupted
+or failed runs save partial results with `run_status: stopped` once the
+simulator is initialized; successful runs use `run_status: completed`.
 
 Headless, configurable rate, and a short dependency smoke test:
 
 ```bash
-xarm-sim --headless --hz 100
-xarm-sim --headless --hz 50
-xarm-sim --headless --steps 20 --output results/smoke
+python run_simulation.py --headless --hz 100
+python run_simulation.py --headless --hz 50
+python run_simulation.py --headless --steps 20 --output results/smoke
 ```
 
 The GUI is paced to wall time; headless runs as fast as possible. Outputs are
 `results/latest/metrics.json`, `scene.json`, and raw `trajectory.csv`. Change
 the output path to keep separate runs. CPU is the tested default backend.
+
+The default scene was verified in a fresh isolated environment, both headless
+and with the GUI. See [standalone verification](docs/STANDALONE_VERIFICATION.md)
+for tested rates, clearances, timing, limitations, and local CSV evidence.
 
 For an existing environment or ordinary Python virtual environment:
 
@@ -46,15 +71,22 @@ is not an offline wheelhouse and is not literally dependency-free.
 ## Change the scene
 
 ```bash
-xarm-sim --headless --goal 0.38 0.35 0.43
-xarm-sim --scene path/to/scene.json
+python run_simulation.py --headless --goal 0.38 0.35 0.43
+python run_simulation.py --config path/to/my_experiment.json
 ```
 
 Use `src/xarm_density/assets/scene.json` as the configuration example. It
-contains start joints, target position, obstacle centers/radii, reference
-duration, gains, sensing width, and joint-rate bounds. Positions are meters;
+contains simulation timestep/duration, QP weights and solver tolerances,
+start joints, target position, obstacle centers/radii, reference duration,
+gains, density settings, and camera settings. See
+[configuration reference](docs/CONFIGURATION.md) for all keys and units.
+Set `dt_s` to `0.01` for 100 Hz or `0.02` for 50 Hz. Positions are meters;
 angles are radians. Arbitrary goals are not guaranteed reachable or navigable
 by this local controller.
+
+Run without arguments to use this config automatically. Custom configs can
+override a subset of keys; command-line options override config values. Each
+successful run saves the effective `config.json` alongside its CSV and metrics.
 
 ## What is included
 
@@ -84,8 +116,8 @@ source install/setup.bash
 ros2 launch xarm_density_ros simulation.launch.py
 
 # Separate clean conda terminal:
-conda activate xarm-density
-xarm-sim --ros --steps 6000 --output results/ros-demo
+conda activate xarm
+python run_simulation.py --ros --steps 6000 --output results/ros-demo
 ```
 
 The standalone tests and Jazzy container build/integration tests

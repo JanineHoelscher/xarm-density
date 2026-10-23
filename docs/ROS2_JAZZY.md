@@ -6,7 +6,7 @@ No ROS node here sends joint commands to a physical arm.
 
 ## Environments
 
-- **Controller:** conda `xarm-density`, Python 3.11, JAX/Clarabel/PyBullet.
+- **Controller:** conda `xarm`, Python 3.11, JAX/Clarabel/PyBullet.
 - **ROS:** Ubuntu 24.04, ROS 2 Jazzy, system Python 3.12 and apt `rclpy`.
 
 Use separate terminals/processes. Do not source ROS in the conda terminal or
@@ -43,7 +43,7 @@ In a separate **clean conda terminal**:
 
 ```bash
 cd ~/xarm-density
-conda activate xarm-density
+conda activate xarm
 xarm-sim --ros --steps 6000 --output results/ros-demo
 ```
 

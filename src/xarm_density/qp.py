@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from time import perf_counter
 
 import clarabel
@@ -20,6 +20,7 @@ class CDFQPConfig:
     residual_margin: float = 0.0
     input_lower: float | FloatArray = -np.inf
     input_upper: float | FloatArray = np.inf
+    solver_settings: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,13 @@ class CDFQP:
         if not np.all(np.isfinite(self.lower)) or not np.all(np.isfinite(self.upper)):
             raise ValueError("direct Clarabel CDF-QP requires finite input bounds")
         self._solver: clarabel.DefaultSolver | None = None
+
+    def _settings(self):
+        settings = clarabel.DefaultSettings()
+        settings.verbose = False
+        for key, value in self.config.solver_settings.items():
+            setattr(settings, key, value)
+        return settings
 
     @staticmethod
     def _upper_triangle(matrix: FloatArray) -> sparse.csc_matrix:
@@ -116,8 +124,7 @@ class CDFQP:
         p_matrix, q_vector, a_matrix, b_vector = self._problem_data(data, hessian)
         used_cached_solver = self._solver is not None
         if self._solver is None:
-            settings = clarabel.DefaultSettings()
-            settings.verbose = False
+            settings = self._settings()
             self._solver = clarabel.DefaultSolver(
                 p_matrix,
                 q_vector,
@@ -132,8 +139,7 @@ class CDFQP:
         solution = self._solver.solve()
         solver_status = str(solution.status)
         if used_cached_solver and solver_status not in ("Solved", "AlmostSolved"):
-            settings = clarabel.DefaultSettings()
-            settings.verbose = False
+            settings = self._settings()
             self._solver = clarabel.DefaultSolver(
                 p_matrix,
                 q_vector,

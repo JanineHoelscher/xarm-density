@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from time import perf_counter
 from typing import Any
@@ -98,6 +98,14 @@ class RobotWorldConfig:
     gripper_opening: float = 0.45
     tcp_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
     urdf: Path = DEFAULT_URDF
+    task_weight: float = 1.0
+    cartesian_task_weight: float = 8.0
+    input_weight: float = 0.02
+    theta_weight: float = 0.0002
+    density_floor: float = 1e-10
+    basis_scale: tuple[float, ...] = (np.pi,) * 6
+    collision_padding: float = 0.0
+    solver_settings: dict = field(default_factory=dict)
 
 
 class UF850CDFController:
@@ -110,18 +118,19 @@ class UF850CDFController:
         self.config = config
         ee_offset = np.eye(4)
         ee_offset[:3, 3] = np.asarray(config.tcp_offset)
+        collision = make_uf850_collision_model(config.include_gripper, config.gripper_opening)
+        collision['radii'] = tuple(tuple(r + config.collision_padding for r in link)
+                                   for link in collision['radii'])
         self.robot = Manipulator.from_urdf(
             str(config.urdf),
             ee_offset=ee_offset,
-            collision_data=make_uf850_collision_model(
-                config.include_gripper, config.gripper_opening
-            ),
+            collision_data=collision,
         )
         centers = jnp.asarray(config.obstacle_centers, dtype=jnp.float64).reshape((-1, 3))
         radii = jnp.asarray(config.obstacle_radii, dtype=jnp.float64)
         goal = jnp.asarray(config.goal, dtype=jnp.float64)
         self.target = goal
-        scale = jnp.full(6, jnp.pi)
+        scale = jnp.asarray(config.basis_scale)
 
         def modeled_clearances(q: jnp.ndarray) -> jnp.ndarray:
             if centers.shape[0] == 0 or config.safety_mode == "none":
@@ -170,6 +179,7 @@ class UF850CDFController:
             n_inputs=6,
             residual_margin=config.residual_margin,
             input_bound=config.qdot_limit,
+            solver_settings=config.solver_settings,
         )
 
     def nominal_velocity(self, q: np.ndarray) -> np.ndarray:
@@ -197,23 +207,23 @@ class UF850CDFController:
             basis_jacobian = np.asarray(self.flux_basis_jacobian(qj))
             psi_value = float(self.psi(qj))
             position = np.asarray(self.ee_position(qj))
-        input_map = block_input_map(basis, rho, channels=6)
+        input_map = block_input_map(basis, rho, channels=6, density_floor=self.config.density_floor)
         if nominal_qdot is None:
             task_map = np.asarray(self.ee_jacobian(qj)) @ input_map
             nominal = self.nominal_velocity(q)
-            task_weight = 8.0
+            task_weight = self.config.cartesian_task_weight
         else:
             task_map = input_map
             nominal = np.asarray(nominal_qdot, dtype=float)
-            task_weight = 1.0
+            task_weight = self.config.task_weight
         result = self.qp.solve(
             input_map=input_map,
             transport_row=pointwise_transport_row(basis_jacobian),
             nominal_input=nominal,
             task_map=task_map,
             task_weight=task_weight,
-            input_weight=2e-2,
-            theta_weight=2e-4,
+            input_weight=self.config.input_weight,
+            theta_weight=self.config.theta_weight,
         )
         result.update(
             {
@@ -221,7 +231,7 @@ class UF850CDFController:
                 "psi": psi_value,
                 "nominal": nominal,
                 "ee_position": position,
-                "density_floor_active": rho < 1e-10,
+                "density_floor_active": rho < self.config.density_floor,
             }
         )
         result["controller_time"] = perf_counter() - start

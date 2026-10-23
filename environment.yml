@@ -1,4 +1,4 @@
-name: xarm-density
+name: xarm
 channels:
   - conda-forge
 dependencies:

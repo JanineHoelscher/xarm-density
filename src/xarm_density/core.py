@@ -24,10 +24,10 @@ def quadratic_basis(x: jnp.ndarray, scale: jnp.ndarray) -> jnp.ndarray:
     return jnp.stack(terms)
 
 
-def block_input_map(values: np.ndarray, rho: float, channels: int) -> np.ndarray:
+def block_input_map(values: np.ndarray, rho: float, channels: int, density_floor=1e-10) -> np.ndarray:
     """Map channel-stacked weighted-flux coefficients to the applied input."""
 
-    row = np.asarray(values, dtype=float) / max(float(rho), 1e-10)
+    row = np.asarray(values, dtype=float) / max(float(rho), density_floor)
     return np.kron(np.eye(channels), row[None, :])
 
 
@@ -53,6 +53,7 @@ class QuadraticCDFQP:
         n_inputs: int,
         residual_margin: float,
         input_bound: float,
+        solver_settings: dict | None = None,
     ) -> None:
         self.controller = CDFQP(
             n_theta=n_theta,
@@ -62,6 +63,7 @@ class QuadraticCDFQP:
                 residual_margin=residual_margin,
                 input_lower=-input_bound,
                 input_upper=input_bound,
+                solver_settings=solver_settings or {},
             ),
         )
 
@@ -112,10 +114,10 @@ class ReducedQuadraticCDFQP(QuadraticCDFQP):
     optimal value is zero. An orthonormal QR basis therefore preserves the QP.
     """
 
-    def __init__(self, n_theta, n_inputs, residual_margin, input_bound):
+    def __init__(self, n_theta, n_inputs, residual_margin, input_bound, solver_settings=None):
         self.full_dimension = n_theta
         self.reduced_dimension = min(n_theta, n_inputs + 1)
-        super().__init__(self.reduced_dimension, n_inputs, residual_margin, input_bound)
+        super().__init__(self.reduced_dimension, n_inputs, residual_margin, input_bound, solver_settings)
 
     def solve(self, input_map, transport_row, nominal_input, task_map=None,
               task_weight=1.0, input_weight=1e-2, theta_weight=1e-5):

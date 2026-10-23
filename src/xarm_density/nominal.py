@@ -17,7 +17,7 @@ class PoseReference:
         rotation = robot.ee_transform(desired_q)[:3, :3]
         controller = PoseTaskVelocityController(
             n_joints=6, kp_task=np.r_[[scene["kp_position"]]*3, [scene["kp_orientation"]]*3],
-            kp_joint=.2, qdot_min=-np.ones(6)*scene["qdot_limit"],
+            kp_joint=scene["kp_joint"], qdot_min=-np.ones(6)*scene["qdot_limit"],
             qdot_max=np.ones(6)*scene["qdot_limit"],
         )
         @jax.jit
