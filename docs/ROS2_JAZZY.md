@@ -16,9 +16,10 @@ dependency is needed. Only one bridge/simulator pair can use these ports.
 
 Jazzy's official binary platform is Ubuntu 24.04:
 [installation](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html).
-Our current development host is Ubuntu 22.04/Humble, so native Jazzy execution
-has not been validated on that host. The supplied CI job builds/tests the ROS
-package inside the official Jazzy/Noble container.
+Our current development host is Ubuntu 22.04/Humble. The ROS package builds
+and its two integration tests pass inside the official Jazzy/Noble container:
+[verified CI run, commit 2007b7d](https://github.com/sriram-2502/xarm-density/actions/runs/40002248041).
+Native Jazzy execution on this development host is not available.
 
 ## 1. Build ROS side once
 
@@ -102,8 +103,13 @@ colcon test-result --verbose
 ```
 
 The GitHub Actions workflow separately checks standalone Python and Jazzy.
-Until the workflow completes successfully, consider native Jazzy integration
-unverified. No GPU is needed for the tested CPU path.
+The initial verified run passed 10 standalone tests and 2 Jazzy integration
+tests (ROS joint feedback and goal round trip). The 700-step standalone rollout
+finished with 4.76 mm target error, zero obstacle-contact steps, and zero control
+deadline misses at 100 Hz. Timing is machine-dependent, not a real-time guarantee.
+No GPU is needed for the tested CPU path. The installed launch/model was also
+smoke-tested locally with Humble; GUI/RViz and physical hardware are not covered
+by the Jazzy CI tests.
 
 ## Hardware work remaining
 

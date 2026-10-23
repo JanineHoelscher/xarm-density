@@ -88,9 +88,10 @@ conda activate xarm-density
 xarm-sim --ros --steps 6000 --output results/ros-demo
 ```
 
-The Jazzy CI job builds/tests in an Ubuntu 24.04 container. This development
-host runs Ubuntu 22.04/Humble; native Jazzy is not locally installed. The bridge
-is simulation-only and never sends physical robot commands.
+The standalone tests and Jazzy container build/integration tests
+[pass in CI](https://github.com/sriram-2502/xarm-density/actions/runs/40002248041).
+This development host runs Ubuntu 22.04/Humble; native Jazzy is not locally
+installed. The bridge is simulation-only and never sends physical robot commands.
 
 The current backend performs joint-velocity integration and joint-state
 playback, not motor dynamics. It stops on failed solves, density-floor use,
