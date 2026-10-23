@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xarm-density"
+version = "0.2.0"
+description = "Standalone UF850 whole-arm control density function simulation"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "numpy==1.26.4", "scipy==1.15.2", "jax==0.4.30", "jaxlib==0.4.30",
+  "clarabel==0.11.1", "pybullet==3.2.7",
+]
+
+[project.scripts]
+xarm-sim = "xarm_density.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+xarm_density = ["assets/**/*.json", "assets/**/*.urdf", "assets/**/*.stl", "assets/**/LICENSE", "_vendor/**/LICENSE"]

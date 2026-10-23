@@ -1,0 +1,13 @@
+{
+  "q_start": [0.0, -0.7, -1.0, 0.0, 0.8, 0.0],
+  "goal": [0.38, 0.35, 0.43],
+  "obstacle_centers": [[0.5665, 0.2553, 0.3056], [0.49, 0.2844, 0.5415], [0.2924, 0.2063, 0.2649], [0.679, 0.0892, 0.4238], [0.5021, 0.3967, 0.3615]],
+  "obstacle_radii": [0.075, 0.08, 0.076, 0.084, 0.061],
+  "reference_duration_s": 7.0,
+  "gripper_opening": 0.85,
+  "qdot_limit": 0.7,
+  "kp_position": 1.4,
+  "kp_orientation": 1.0,
+  "sensing_width": 0.1,
+  "residual_margin": 0.01
+}

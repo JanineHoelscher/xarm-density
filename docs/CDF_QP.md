@@ -1,7 +1,7 @@
 # CDF-QP: physical and matrix formulations
 
 This document describes the implemented driftless UF850 controller in
-`scripts/xarm_cdf_qp/robot.py` and `core.py`. Validation 9 supplies a nominal
+`src/xarm_density/robot.py` and `core.py`. The simulation supplies a nominal
 joint velocity from the operational-space pose controller and filters it.
 
 ## Version 1: density and weighted flux
@@ -129,3 +129,48 @@ NumPy/SciPy assemble the matrices and CPU Clarabel solves a cached QP.
 
 The simulator then applies $q_{k+1}=q_k+\Delta t\,B(q_k)\theta_k$ using Bullet
 joint resets and records independent mesh clearance/contact queries.
+
+## Exact row-space reduction used in validation 10
+
+The full formulation above is unchanged. The optional reduced backend removes
+coefficient directions that cannot affect either the command or the residual.
+Form the row-space matrix and an orthonormal basis using QR:
+
+```math
+C=\begin{bmatrix}B\\a^T\end{bmatrix},\qquad
+\operatorname{range}(C^T)\subseteq\operatorname{range}(Q),\qquad Q^TQ=I.
+```
+
+For six inputs and one residual, Q has at most seven columns. If the transport
+row is dependent, QR may retain an extra direction; this does not change the
+optimum. Decompose the coefficients as follows:
+
+```math
+\theta=Qz+\theta_\perp,\qquad Q^T\theta_\perp=0,\qquad
+B\theta_\perp=0,\quad a^T\theta_\perp=0.
+```
+
+The task map in these experiments is B or J B, so it also annihilates the
+orthogonal component. That component only increases the coefficient penalty:
+
+```math
+\|\theta\|^2=\|z\|^2+\|\theta_\perp\|^2.
+```
+
+Since the coefficient penalty is strictly positive, the optimum has
+theta_perp = 0. Substitute theta = Q z into the original problem:
+
+```math
+\begin{aligned}
+\min_z\quad &\tfrac12 z^T(Q^THQ)z+(Q^Tg)^Tz\\
+\text{subject to}\quad &a^TQz\ge\eta,\\
+&-u_{\max}\mathbf1\le BQz\le u_{\max}\mathbf1.
+\end{aligned}
+```
+
+Recover theta = Q z and evaluate the original maps. This is an algebraic
+reduction, not fewer obstacle pairs or a relaxed density constraint. The code
+requires positive coefficient regularization and checks that the task map is
+in the retained row space. Full and reduced solutions can differ slightly due
+to finite solver tolerances. See the validation 10 performance report for
+measured command differences and timing at fixed 50, 100, and 240 Hz rates.

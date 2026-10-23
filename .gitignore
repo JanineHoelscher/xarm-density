@@ -1,27 +1,21 @@
-# Generated ROS workspace and separately managed vendor sources
+/archive/
 /build/
 /install/
 /log/
-/src/
 /generated/
+/results/
 /.vscode/
-
-# Python and local environments
+/.venv*/
+/dist/
+*.egg-info/
 __pycache__/
 *.py[cod]
-.venv/
 .pytest_cache/
-
-# Downloaded papers and compiled LaTeX artifacts
-/resources/**/*.pdf
-/resources/*.pdf
-*.aux
-*.log
-*.out
-*.synctex.gz
-
-# Local credentials/configuration
 .env
 .env.*
 *.pem
 *.key
+*.aux
+*.log
+*.out
+*.synctex.gz
